@@ -1,11 +1,16 @@
 # Production deployment: MCP 2026-07-28 via pinned proxy (Path A)
 
-This runbook describes the native guard/proxy topology and the
-isolated reliability candidate. **The candidate changes have not been
-deployed.** Historical production observations and original staging
-evidence are in `docs/architecture-decision-mcp-2026-07-28.md`;
-recheck the live checkout, process owner, and endpoints before any
-cutover.
+This runbook describes the native guard/proxy topology and records
+historical reliability-candidate verification. It is not proof of the
+currently deployed revision. Recheck Git, generated artifacts, process
+ownership, and endpoints separately before a cutover. See
+[the agent handoff](agent-handoff.md) for documentation reconciliation
+and [the transport ADR](architecture-decision-mcp-2026-07-28.md) for
+historical architecture evidence.
+
+The selected deployment is native Node/PM2. Docker is outside this
+path unless separately requested; historical Docker verification gaps
+are not native-deployment blockers.
 
 The candidate was exercised on Node.js 22.23.2 with Corepack pnpm
 11.9.0. The table below describes the original deployment baseline.
@@ -172,7 +177,9 @@ credential configuration. Capture only the relevant non-secret fields.
 
 ## Isolated verification snapshot (2026-09-06)
 
-The reliability candidate is uncommitted and **not deployed**.
+At the time of this verification, the reliability candidate was
+uncommitted and **not deployed**. The results below are historical,
+not a statement about the current checkout or running process.
 
 - Fresh registry install into an empty private pnpm store: passed; all
   three dependency patches applied without manual edits.
@@ -207,7 +214,9 @@ Selected live-provider checks also ran against the isolated candidate.
 See [Node 24 and live-provider evidence](verification-node24-live.md)
 for exact coverage, cancellation-status caveats, skipped unbounded
 operations, and incomplete final billing attribution. This follow-up
-does not deploy the candidate or clear the Docker runtime gate.
+does not deploy the candidate or establish Docker runtime behavior.
+Docker verification is relevant only if that deployment path is
+separately requested.
 
 ## Cutover and rollback boundary
 

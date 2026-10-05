@@ -666,21 +666,22 @@ inbound API key is neither in that file nor the command line.
 
 ## Development
 
-Requires Node.js 22 or newer and the repository-pinned pnpm release.
+Requires Node.js 22 or newer and Corepack with the repository-pinned
+pnpm release. Use an isolated worktree, not the live deployment
+checkout, for development.
 
-```bash
-corepack enable
-corepack pnpm install --frozen-lockfile
-corepack pnpm run check
-corepack pnpm test
-corepack pnpm run build
-corepack pnpm run test:smoke
-python3 -B -m unittest discover -s docker -p 'test_*.py' -v
-shellcheck start-server.sh
-```
+- [Contributor guide](CONTRIBUTING.md): authoritative setup commands,
+  dependency isolation, conventions, and checks by change type.
+- [Agent guidance](AGENTS.md): project invariants and working
+  boundaries.
+- [Deployment runbook](docs/deployment.md): native deployment,
+  verification, and rollback.
+- [Agent handoff](docs/agent-handoff.md): documentation reconciliation
+  and separate unfinished work.
 
-Use an isolated branch or worktree for non-trivial changes. Do not use
-a live deployment checkout as a scratch workspace.
+Documentation-only edits do not require the runtime integration gate.
+Docker checks apply only to separately scoped Docker work, not the
+native Node/PM2 deployment.
 
 ## Fork scope and upstream relationship
 

@@ -1,109 +1,136 @@
 # Contributing
 
-Thanks for your interest in contributing to mcp-omnisearch. The goal
-of this project is to provide a clear, reliable set of MCP tools with
-code that’s easy to reason about and safe to extend.
+Keep changes focused and preserve the fork's MCP and provider
+contracts. [AGENTS.md](AGENTS.md) owns project invariants and working
+boundaries; this guide owns contributor commands and validation.
 
-## Core Principles
+## Setup and dependency safety
 
-- Small, focused PRs: Prefer a narrow, self‑contained change over a
-  broad refactor. One good PR with a clear explanation is far more
-  likely to be reviewed and merged quickly than many large PRs opened
-  at once.
-- Explain the “why”: In your PR description, include the problem, the
-  approach, and how you verified it. Short screen recordings or gifs
-  are very welcome.
-- Build trust incrementally: Start with a small change; once merged,
-  follow up with the next logical step. Avoid submitting several big
-  PRs simultaneously.
+Use Node.js 22 or newer and Corepack with the `packageManager` version
+in `package.json`. CI covers Node 22 and 24. Do not install a global
+pnpm or replace the pinned lockfile with npm output.
 
-## PR Expectations (What To Include)
+Prepare dependencies only in an isolated checkout with installation
+approved on the production host. Use an empty private store and copy
+imports to avoid shared hardlink mutations:
 
-- Summary: 1–3 sentences describing the change and motivation.
-- Scope: What files/areas are touched and why they’re needed (no
-  drive‑by changes).
-- Verification: How you tested locally (commands and expected
-  outputs). If applicable, example MCP tool calls and sample results.
-- Impact: Any breaking changes, provider/API key requirements, or
-  behavior differences.
+```bash
+corepack pnpm install --frozen-lockfile --store-dir /path/to/private-store --package-import-method=copy
+```
 
-## Project Conventions (Please Follow)
+Replace the example path with the approved private store. Keep that
+store explicit on subsequent commands, for example:
 
-- **HTTP and errors**
-  - Use the shared helper `src/common/http.ts` (`http_json`) for all
-    network requests. Do not introduce new raw `fetch` usage in
-    providers.
-  - Map status codes to `ProviderError` consistently; let `http_json`
-    handle common cases (401/403/429/5xx).
-  - Always include request timeouts using `AbortSignal.timeout(...)`
-    with values from `src/config/env.ts`.
-- **Auth and configuration**
-  - Read API keys from `src/config/env.ts` and validate with
-    `validate_api_key(...)`.
-  - Do not hard‑code keys or base URLs; use the `config` object seen
-    in the codebase.
-  - Providers must remain opt‑in: if a key is missing, the provider’s
-    tools must not be registered (see `initialize_providers()`).
-- **Retries**
-  - Use `retry_with_backoff(...)` for provider calls that can
-    transiently fail (rate limits, flaky networks).
-- **Formatting & style**
-  - This repo uses Prettier. Run `pnpm run format` (or
-    `pnpm run format:check`) before submitting.
-  - TypeScript, ESM modules, no new lint rules or formatters.
-- **Scope discipline**
-  - Keep unrelated changes out of your PR. If you spot issues, open a
-    separate issue or a follow‑up PR.
+```bash
+corepack pnpm --store-dir /path/to/private-store run check
+```
 
-## Provider Authoring Guide (Short)
+Worktree isolation does not protect a shared store. `pnpm run` and
+`pnpm exec` can trigger installation when dependency state differs.
+For read-only diagnostics, invoke already-installed local binaries
+directly; report missing prerequisites rather than installing them. Do
+not force module-directory replacement or repair a shared cache.
+Dependency patches belong in `patches/`, with matching
+`pnpm-workspace.yaml` declarations and lockfile hashes. Changes there
+need reproducibility checks using a fresh frozen install.
 
-- Use `http_json` for requests and JSON parsing.
-- Use the appropriate auth header per provider (e.g.,
-  `Authorization: Bearer`, `Authorization: Bot`, or vendor‑specific
-  tokens). Several existing providers are good references.
-- Timeouts come from `config`; do not hard‑code.
-- Return the minimal, structured shape expected by our common types
-  (search, processing).
+## Implementation conventions
 
-## Local Dev Quickstart
+- Use `http_json` in `src/common/http.ts` for provider JSON requests.
+  Preserve response-size bounds, typed errors, and cancellation.
+- Read keys, base URLs, and timeouts from `src/config/env.ts` and
+  validate configured keys. Missing keys leave only that provider
+  unavailable.
+- Preserve caller cancellation and overall deadlines. Apply shared
+  retries only to operations safe to retry within their total budget.
+  Never automatically retry paid job creation without an explicit
+  safety contract.
+- Keep provider-specific schemas and defensive response validation.
+  Use neutral fixtures for shared error/health tests.
+- Follow existing TypeScript, ESM, Valibot, and Vitest patterns. Vite+
+  owns formatting, lint, types, tests, and build. Formatting comes
+  from `vite.config.ts`: tabs, single quotes, width 70, trailing
+  commas.
+- `format` and `check:fix` both run `vp check --fix`, which may change
+  more than formatting. Use fixes only on approved files and inspect
+  the diff. `check` is non-fixing; there is no `format:check` script.
+- For bugs or public-contract changes, reproduce the failure with a
+  focused regression before changing behavior. Keep unrelated
+  refactors, dependencies, logging, and generated files out of scope.
 
-- Install deps: `pnpm install`
-- Build: `pnpm run build`
-- Format: `pnpm run format` (or `pnpm run format:check`)
-- Optional: run via MCP Inspector for basic tool listing and
-  invocations: `npx @modelcontextprotocol/inspector dist/index.js`
+## Verification by change type
 
-## Submitting Changes
+**Documentation only:** check changed Markdown formatting, local
+links, referenced paths and commands, instruction consistency, and
+`git diff --check`. Use the existing formatter without installation:
 
-- Open an issue first proposing the change. Briefly describe the
-  problem, the proposed solution, and any alternatives. This helps
-  align scope before you write code.
-- Open a small PR with a clear description (problem → approach →
-  verification). If the change is part of a broader effort, note the
-  plan and which step this PR covers.
-- If your change spans multiple logical parts, stage them as a series
-  of small PRs, each independently reviewable.
-- Use concise changeset messages (1 line) when applicable.
+```bash
+./node_modules/.bin/vp fmt --check AGENTS.md CONTRIBUTING.md
+```
 
-## What Gets PRs Merged Faster
+Replace the example paths with the changed Markdown files. No build,
+provider call, or new runtime test is needed for prose-only changes.
+Executable examples need appropriate safe validation. CI still runs
+its configured gates when triggered.
 
-- A focused diff that’s easy to review.
-- Clear rationale and validation steps in the PR description (bonus: a
-  short video/gif).
-- Adherence to project conventions (http_json, timeouts, config,
-  ProviderError usage, formatting).
+**Code or public contract:** start with affected regression tests:
 
-## Out Of Scope (Please Avoid)
+```bash
+./node_modules/.bin/vitest run src/path/to/changed.test.ts
+```
 
-- Adding startup banners, excessive logs, or unrelated observability
-  changes.
-- Introducing shared input schemas for tools that force providers into
-  awkward shapes.
-- Large, multi‑area refactors combined with feature changes in a
-  single PR.
+Replace that example with the actual test path. Before handing off an
+integration candidate, run the repository gate with the same approved
+dependency/store setup. With the example private store above:
 
-## Code of Conduct
+```bash
+corepack pnpm --store-dir /path/to/private-store run check
+corepack pnpm --store-dir /path/to/private-store test
+corepack pnpm --store-dir /path/to/private-store run build
+corepack pnpm --store-dir /path/to/private-store run test:smoke
+```
 
-- Be respectful and collaborative. Thoughtful discussion and small,
-  well‑explained changes build trust and move the project forward
-  quickly.
+The offline smoke script uses fixture credentials, temporary
+home/result storage, unused loopback ports, and blocked provider
+fetches. It covers both protocol eras and client-visible transport
+contracts, not live-provider availability. For transport/deployment
+changes, consult [the runbook](docs/deployment.md) for staging and
+production-preservation checks.
+
+**Shell:** preserve executable modes and run ShellCheck on changed
+shell launchers, for example `shellcheck start-server.sh`.
+
+**Docker, only when explicitly in scope:** the selected deployment is
+native Node/PM2; Docker is not a native-path validation gate. For
+separately authorized Docker work, existing launcher/config checks
+are:
+
+```bash
+python3 -B -m unittest discover -s docker -p 'test_*.py' -v
+docker build --check .
+```
+
+These do not prove image or MCPO runtime behavior; Docker changes also
+need authorized isolated image/runtime validation. Report unavailable
+checks without starting a daemon or installing prerequisites.
+
+After required checks pass, repeat or broaden only for new edits,
+failures, or unresolved concerns. Separate existing failures and
+historical evidence from fresh checks. Finish with `git diff --check`
+and review the complete diff, including new files.
+
+## Documentation ownership and submission
+
+README owns public purpose, capabilities, setup, and navigation.
+Deployment docs own operational procedures; ADRs own rationale; dated
+verification and audit records own historical evidence. Keep proposed
+work labeled as proposed. Update the relevant authoritative reference
+when behavior changes, and link rather than duplicate it.
+[The handoff](docs/agent-handoff.md) records separate unfinished docs.
+
+A local task does not require an issue, PR, changeset, or version
+bump. When submission is requested, follow existing commit style and
+include rationale, scope, actual checks, and compatibility/operational
+impact. Release/publish scripts and registry metadata updates belong
+only to an explicitly requested release. Preserve upstream attribution
+and keep discussion respectful.
