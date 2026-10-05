@@ -40,7 +40,7 @@ remain unchanged.
 
 ## Startup capability selection
 
-`OMNISEARCH_TOOL_GROUPS` controls the tools registered by each server
+`RETRIEVER_TOOL_GROUPS` controls the tools registered by each server
 instance. It is process-wide startup configuration, not per-request or
 per-user authorization. A change requires restarting that configured
 instance; this phase does not change the live deployment.
@@ -103,7 +103,7 @@ configuration:
 ```json
 {
 	"env": {
-		"OMNISEARCH_TOOL_GROUPS": "research"
+		"RETRIEVER_TOOL_GROUPS": "research"
 	}
 }
 ```

@@ -1,6 +1,6 @@
-# Agent guidance: mcp-omnisearch
+# Agent guidance: mcp-retriever
 
-Repository-specific guidance for `keiranhaax/mcp-omnisearch`, a
+Repository-specific guidance for `keiranhaax/mcp-retriever`, a
 maintained fork of `spences10/mcp-omnisearch`. This supplements
 applicable host/user instructions; it does not override
 higher-priority instructions or expand authorization. On this host,
@@ -9,7 +9,7 @@ shared approval and preservation policy lives in
 
 ## Working scope
 
-`/opt/mcp-omnisearch` is a live deployment checkout. Develop and
+`/opt/mcp-retriever` is a live deployment checkout. Develop and
 validate changes in an approved isolated worktree under
 `/home/ubuntu/worktrees/`. Preserve pre-existing edits and untracked
 files, including `.hermes/`, `.env`, `package-lock.json`, and other

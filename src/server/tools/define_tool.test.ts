@@ -56,8 +56,8 @@ const annotations = {
 };
 
 beforeEach(() => {
-	directory = mkdtempSync(join(tmpdir(), 'omnisearch-define-tool-'));
-	vi.stubEnv('OMNISEARCH_RESULT_DIR', directory);
+	directory = mkdtempSync(join(tmpdir(), 'retriever-define-tool-'));
+	vi.stubEnv('RETRIEVER_RESULT_DIR', directory);
 	reset_provider_health();
 	register_provider('search', 'fixture');
 	vi.spyOn(console, 'error').mockImplementation(() => {});

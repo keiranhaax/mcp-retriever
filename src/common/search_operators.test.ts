@@ -7,7 +7,7 @@ import {
 
 describe('parse_search_operators', () => {
 	it.each([
-		'mcp-omnisearch',
+		'mcp-retriever',
 		'C++',
 		'https://example.com/site:docs',
 		'before:2024-invalid',
@@ -164,7 +164,7 @@ describe('build_query_with_operators', () => {
 		'"cats AND dogs" OR +birds NOT -fish',
 		'(site:a.example OR site:b.example) AND C++',
 		'intitle:"C++ guide" OR intitle:manual filetype:pdf filetype:md',
-		'"literal site:example.com and -term" mcp-omnisearch',
+		'"literal site:example.com and -term" mcp-retriever',
 	])('preserves query order and every term in %s', (query) => {
 		expect(
 			build_query_with_operators(

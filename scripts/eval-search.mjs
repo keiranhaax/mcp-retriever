@@ -201,7 +201,7 @@ const run_live = async (options) => {
 		readFileSync(options.values.env, 'utf8'),
 	);
 	const directory = report_dir(options.values.out);
-	const home = mkdtempSync(join(tmpdir(), 'omnisearch-eval-home-'));
+	const home = mkdtempSync(join(tmpdir(), 'retriever-eval-home-'));
 	const events = join(directory, 'requests.jsonl');
 	// One attempt plus the request helper's single retry per call, for
 	// every single-provider call and every fused call that includes it.
@@ -216,17 +216,17 @@ const run_live = async (options) => {
 		HOME: home,
 		PATH: `${dirname(process.execPath)}:${process.env.PATH}`,
 		NODE_ENV: 'test',
-		OMNISEARCH_RESULT_DIR: join(home, 'results'),
-		OMNISEARCH_HTTP_CACHE_BYTES: '0',
-		OMNISEARCH_LIVE_GUARD: '1',
-		OMNISEARCH_LIVE_RULES: JSON.stringify(rules),
-		OMNISEARCH_LIVE_EVENTS: events,
+		RETRIEVER_RESULT_DIR: join(home, 'results'),
+		RETRIEVER_HTTP_CACHE_BYTES: '0',
+		RETRIEVER_LIVE_GUARD: '1',
+		RETRIEVER_LIVE_RULES: JSON.stringify(rules),
+		RETRIEVER_LIVE_EVENTS: events,
 		NODE_OPTIONS: `--import=${fileURLToPath(new URL('./verify-live.mjs', import.meta.url))}`,
 	};
 	// The operator's own caps and cooldown settings travel with the run.
 	for (const name of [
-		'OMNISEARCH_SPEND_CAPS',
-		'OMNISEARCH_PROVIDER_COOLDOWN_MS',
+		'RETRIEVER_SPEND_CAPS',
+		'RETRIEVER_PROVIDER_COOLDOWN_MS',
 	]) {
 		const value = process.env[name] ?? credentials[name];
 		if (value) env[name] = value;

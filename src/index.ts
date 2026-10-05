@@ -11,4 +11,4 @@ const { name, version } = JSON.parse(
 const server = create_server({ name, version });
 const transport = new StdioTransport(server);
 transport.listen();
-console.error('Omnisearch MCP server running on stdio');
+console.error('Retriever MCP server running on stdio');

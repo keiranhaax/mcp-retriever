@@ -33,8 +33,8 @@ const request = async (
 	return response.result;
 };
 beforeEach(() => {
-	result_dir = mkdtempSync(join(tmpdir(), 'omnisearch-p1a-'));
-	vi.stubEnv('OMNISEARCH_RESULT_DIR', result_dir);
+	result_dir = mkdtempSync(join(tmpdir(), 'retriever-p1a-'));
+	vi.stubEnv('RETRIEVER_RESULT_DIR', result_dir);
 	for (const value of settings) value.api_key = 'p1a-fixture-key';
 	fetch_mock.mockReset();
 	fetch_mock.mockImplementation(async () => {

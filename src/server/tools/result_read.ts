@@ -31,7 +31,7 @@ export const register_result_read = (
 						'Invalid result ID',
 					),
 					v.description(
-						'Opaque result ID returned by an Omnisearch tool',
+						'Opaque result ID returned by an Retriever tool',
 					),
 				),
 				offset: v.optional(

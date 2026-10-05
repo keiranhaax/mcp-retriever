@@ -96,9 +96,9 @@ const call = async (args: Record<string, unknown>) =>
 	)) as any;
 
 beforeEach(() => {
-	directory = mkdtempSync(join(tmpdir(), 'omnisearch-archive-'));
-	vi.stubEnv('OMNISEARCH_RESULT_DIR', directory);
-	vi.stubEnv('OMNISEARCH_HTTP_CACHE_BYTES', '0');
+	directory = mkdtempSync(join(tmpdir(), 'retriever-archive-'));
+	vi.stubEnv('RETRIEVER_RESULT_DIR', directory);
+	vi.stubEnv('RETRIEVER_HTTP_CACHE_BYTES', '0');
 	for (const item of settings) item.api_key = undefined;
 	config.processing.tavily_extract.api_key = 'archive-fixture-key';
 	config.processing.firecrawl_scrape.api_key = 'archive-fixture-key';

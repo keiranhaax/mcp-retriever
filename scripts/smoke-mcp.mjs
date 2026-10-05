@@ -18,7 +18,7 @@ const unusedPort = async () => {
 	return port;
 };
 
-const home = await mkdtemp(join(tmpdir(), 'omnisearch-smoke-'));
+const home = await mkdtemp(join(tmpdir(), 'retriever-smoke-'));
 const [port, upstreamPort] = await Promise.all([
 	unusedPort(),
 	unusedPort(),
@@ -57,7 +57,7 @@ const env = {
 	GUARD_LISTEN_PORT: String(port),
 	GUARD_UPSTREAM_PORT: String(upstreamPort),
 	GUARD_ALLOWED_HOSTS: `127.0.0.1:${port}`,
-	OMNISEARCH_RESULT_DIR: join(home, 'results'),
+	RETRIEVER_RESULT_DIR: join(home, 'results'),
 	// No network provider request is allowed from either child process.
 	NODE_OPTIONS:
 		'--import=data:text/javascript,globalThis.fetch=async()=>{console.error("OFFLINE_SMOKE_NETWORK_ATTEMPT");throw%20new%20Error("OFFLINE_SMOKE_NETWORK_BLOCKED")}',
@@ -170,7 +170,7 @@ try {
 		assert.equal(response.status, 401);
 		assert.equal(
 			response.headers.get('www-authenticate'),
-			'ApiKey realm="omnisearch"',
+			'ApiKey realm="retriever"',
 		);
 	}
 	checks.push('authentication');
@@ -377,12 +377,12 @@ try {
 		.data.result.resourceTemplates;
 	assert(
 		templates.some(
-			(t) => t.uriTemplate === 'omnisearch://search/{provider}/info',
+			(t) => t.uriTemplate === 'retriever://search/{provider}/info',
 		),
 	);
 	const info = await rpc(
 		'resources/read',
-		{ uri: 'omnisearch://search/brave/info' },
+		{ uri: 'retriever://search/brave/info' },
 		true,
 	);
 	assert.equal(

@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { createInterface } from 'node:readline';
 
 const root = fileURLToPath(new URL('../../../../', import.meta.url));
-const home = await mkdtemp(join(tmpdir(), 'omnisearch-p1b-built-'));
+const home = await mkdtemp(join(tmpdir(), 'retriever-p1b-built-'));
 const url = 'https://example.test/report?edition=2';
 const text =
 	'# Introduction\n' +
@@ -40,7 +40,7 @@ const child = spawn(process.execPath, ['dist/index.js'], {
 	env: {
 		PATH: process.env.PATH,
 		HOME: home,
-		OMNISEARCH_RESULT_DIR: join(home, 'results'),
+		RETRIEVER_RESULT_DIR: join(home, 'results'),
 		TAVILY_API_KEY: 'p1b-offline-fixture-key',
 		NODE_OPTIONS: `--import=data:text/javascript,${encodeURIComponent(mock)}`,
 	},

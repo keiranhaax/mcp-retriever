@@ -9,7 +9,7 @@ import { pathToFileURL } from 'node:url';
 // Built-server behavior probe: every provider response is an offline
 // fixture and any unexpected URL fails. No production environment copied.
 const home = await mkdtemp(
-	join(tmpdir(), 'omnisearch-workflow-smoke-'),
+	join(tmpdir(), 'retriever-workflow-smoke-'),
 );
 const preload = join(home, 'provider-fixture.mjs');
 const text =
@@ -62,7 +62,7 @@ const child = spawn(
 			PATH: process.env.PATH,
 			HOME: home,
 			NODE_ENV: 'test',
-			OMNISEARCH_RESULT_DIR: join(home, 'results'),
+			RETRIEVER_RESULT_DIR: join(home, 'results'),
 			TAVILY_API_KEY: 'workflow-offline-fixture',
 			FIRECRAWL_API_KEY: 'focused-offline-fixture',
 		},

@@ -260,12 +260,12 @@ describe('TavilyExtractProvider response validation', () => {
 		await new TavilyExtractProvider().process_content(
 			'https://example.com',
 			'basic',
-			{ query: 'mcp-omnisearch C++', chunks_per_source: 5 },
+			{ query: 'mcp-retriever C++', chunks_per_source: 5 },
 		);
 		expect(
 			JSON.parse(fetch_mock.mock.calls[0][1].body),
 		).toMatchObject({
-			query: 'mcp-omnisearch C++',
+			query: 'mcp-retriever C++',
 			chunks_per_source: 5,
 			extract_depth: 'basic',
 			include_images: false,

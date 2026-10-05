@@ -289,7 +289,7 @@ const reject = (
 	message: string,
 ): void => {
 	if (status === 401)
-		res.setHeader('www-authenticate', 'ApiKey realm="omnisearch"');
+		res.setHeader('www-authenticate', 'ApiKey realm="retriever"');
 	send_json(res, status, json_rpc_error(null, -32000, message));
 };
 

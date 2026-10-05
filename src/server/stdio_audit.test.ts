@@ -49,7 +49,7 @@ const start = async (env: Record<string, string> = {}) => {
 		['--input-type=module', '-e', source],
 		{
 			cwd: process.cwd(),
-			env: { ...process.env, OMNISEARCH_MAX_INFLIGHT: '2', ...env },
+			env: { ...process.env, RETRIEVER_MAX_INFLIGHT: '2', ...env },
 			stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
 		},
 	);
@@ -200,7 +200,7 @@ describe('direct stdio resource admission', () => {
 
 		it('fails closed instead of queueing an oversized response', async () => {
 			const fixture = await start({
-				OMNISEARCH_STDIO_MAX_OUTPUT_BYTES: '4096',
+				RETRIEVER_STDIO_MAX_OUTPUT_BYTES: '4096',
 			});
 			try {
 				fixture.stdin.write(line(call(1, 'large')));
@@ -215,7 +215,7 @@ describe('direct stdio resource admission', () => {
 
 		it('bounds queued notifications when stdout is stalled', async () => {
 			const fixture = await start({
-				OMNISEARCH_STDIO_MAX_OUTPUT_BYTES: '32768',
+				RETRIEVER_STDIO_MAX_OUTPUT_BYTES: '32768',
 			});
 			try {
 				fixture.stdin.write(
@@ -251,7 +251,7 @@ describe('direct stdio resource admission', () => {
 
 		it('keeps cancellation dispatch live while bounded output awaits drain', async () => {
 			const fixture = await start({
-				OMNISEARCH_STDIO_MAX_OUTPUT_BYTES: '1048576',
+				RETRIEVER_STDIO_MAX_OUTPUT_BYTES: '1048576',
 				FIXTURE_OUTPUT_COUNT: '48',
 			});
 			try {
@@ -301,7 +301,7 @@ describe('direct stdio resource admission', () => {
 			'closes on oversized frame (newline=%s)',
 			async (newline) => {
 				const fixture = await start({
-					OMNISEARCH_STDIO_MAX_FRAME_BYTES: '1024',
+					RETRIEVER_STDIO_MAX_FRAME_BYTES: '1024',
 				});
 				try {
 					fixture.stdin.write(
@@ -318,7 +318,7 @@ describe('direct stdio resource admission', () => {
 
 		it('counts fragmented UTF-8 bytes, not JavaScript characters', async () => {
 			const fixture = await start({
-				OMNISEARCH_STDIO_MAX_FRAME_BYTES: '1024',
+				RETRIEVER_STDIO_MAX_FRAME_BYTES: '1024',
 			});
 			try {
 				fixture.stdin.write(Buffer.from('é'.repeat(300)));
@@ -333,7 +333,7 @@ describe('direct stdio resource admission', () => {
 
 		it('accepts an exact-boundary frame split inside a UTF-8 code point', async () => {
 			const fixture = await start({
-				OMNISEARCH_STDIO_MAX_FRAME_BYTES: '1024',
+				RETRIEVER_STDIO_MAX_FRAME_BYTES: '1024',
 			});
 			try {
 				const text = JSON.stringify({

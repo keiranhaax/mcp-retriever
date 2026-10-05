@@ -31,9 +31,9 @@ const fixture = (text = 'evidence😀漢字\n'.repeat(1000)) => ({
 });
 beforeEach(() => {
 	directory = mkdtempSync(
-		join(tmpdir(), 'omnisearch-p1b-presentation-'),
+		join(tmpdir(), 'retriever-p1b-presentation-'),
 	);
-	vi.stubEnv('OMNISEARCH_RESULT_DIR', directory);
+	vi.stubEnv('RETRIEVER_RESULT_DIR', directory);
 });
 afterEach(() => {
 	vi.unstubAllEnvs();
@@ -181,7 +181,7 @@ it('retains bounded provenance when source identities alone exceed the budget', 
 });
 
 it('retains existing private-file permissions and expiry for compact handles', () => {
-	vi.stubEnv('OMNISEARCH_RESULT_TTL_MS', '1000');
+	vi.stubEnv('RETRIEVER_RESULT_TTL_MS', '1000');
 	const response: any = present_result(fixture(), options);
 	const path = join(directory, `${response.result_id}.txt`);
 	expect(statSync(directory).mode & 0o777).toBe(0o700);
@@ -201,7 +201,7 @@ it('retains aggregate-quota eviction and separate-directory isolation', () => {
 	const size = statSync(
 		join(directory, `${first.result_id}.txt`),
 	).size;
-	vi.stubEnv('OMNISEARCH_RESULT_STORE_MAX_BYTES', String(size + 512));
+	vi.stubEnv('RETRIEVER_RESULT_STORE_MAX_BYTES', String(size + 512));
 	const second: any = present_result(source, options);
 	expect(() => read_result_chunk(first.result_id)).toThrow(
 		'Result not found or expired',
@@ -209,7 +209,7 @@ it('retains aggregate-quota eviction and separate-directory isolation', () => {
 	expect(read_result_chunk(second.result_id).content).toContain(
 		'response_mode',
 	);
-	vi.stubEnv('OMNISEARCH_RESULT_DIR', join(directory, 'other'));
+	vi.stubEnv('RETRIEVER_RESULT_DIR', join(directory, 'other'));
 	expect(() => read_result_chunk(second.result_id)).toThrow(
 		'Result not found or expired',
 	);

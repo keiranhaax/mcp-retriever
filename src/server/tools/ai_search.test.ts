@@ -158,7 +158,7 @@ it.each(['AbortError', 'TimeoutError'])(
 		expect(await pending).toMatchObject({
 			isError: true,
 			_meta: {
-				omnisearch: {
+				retriever: {
 					error: {
 						kind: name === 'TimeoutError' ? 'timeout' : 'cancelled',
 						retryable: false,

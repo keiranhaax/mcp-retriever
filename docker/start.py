@@ -19,10 +19,10 @@ PROVIDER_ENV = (
     "FIRECRAWL_API_KEY",
     "FIRECRAWL_BASE_URL",
     "FIRECRAWL_AGENT_URL",
-    "OMNISEARCH_RESULT_DIR",
-    "OMNISEARCH_RESULT_TTL_MS",
-    "OMNISEARCH_RESULT_MAX_BYTES",
-    "OMNISEARCH_RESULT_STORE_MAX_BYTES",
+    "RETRIEVER_RESULT_DIR",
+    "RETRIEVER_RESULT_TTL_MS",
+    "RETRIEVER_RESULT_MAX_BYTES",
+    "RETRIEVER_RESULT_STORE_MAX_BYTES",
 )
 
 
@@ -40,7 +40,7 @@ def main():
 
     config = {
         "mcpServers": {
-            "omnisearch": {
+            "retriever": {
                 "command": "node",
                 "args": [str(Path(__file__).resolve().parent.parent / "dist/index.js")],
                 "env": {key: os.environ[key] for key in PROVIDER_ENV if key in os.environ},
@@ -51,7 +51,7 @@ def main():
     # Its Python entry point keeps the key out of argv and the JSON file.
     from mcpo.main import run
 
-    with tempfile.TemporaryDirectory(prefix="omnisearch-mcpo-") as directory:
+    with tempfile.TemporaryDirectory(prefix="retriever-mcpo-") as directory:
         config_path = Path(directory) / "config.json"
         with config_path.open("x", encoding="utf-8") as file:
             os.chmod(config_path, 0o600)

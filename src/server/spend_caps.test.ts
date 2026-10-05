@@ -38,9 +38,9 @@ const read_ledger = () => JSON.parse(readFileSync(ledger(), 'utf8'));
 const noon = new Date('2026-10-01T12:00:00.000Z');
 
 beforeEach(() => {
-	directory = mkdtempSync(join(tmpdir(), 'omnisearch-spend-'));
-	vi.stubEnv('OMNISEARCH_RESULT_DIR', directory);
-	vi.stubEnv('OMNISEARCH_SPEND_CAPS', '');
+	directory = mkdtempSync(join(tmpdir(), 'retriever-spend-'));
+	vi.stubEnv('RETRIEVER_RESULT_DIR', directory);
+	vi.stubEnv('RETRIEVER_SPEND_CAPS', '');
 	vi.spyOn(console, 'warn').mockImplementation(() => {});
 	reset_spend_ledger();
 });
@@ -135,7 +135,7 @@ describe('ledger', () => {
 	});
 
 	it('persists per-provider UTC day and month totals in a private file', () => {
-		vi.stubEnv('OMNISEARCH_SPEND_CAPS', 'exa:monthly:usd=20');
+		vi.stubEnv('RETRIEVER_SPEND_CAPS', 'exa:monthly:usd=20');
 		record_spend('exa', { usd: 0.007 }, { now: noon });
 		record_spend('exa_answer', { usd: 0.01 }, { now: noon });
 		record_spend('tavily', { credits: 2 }, { now: noon });
@@ -173,7 +173,7 @@ describe('ledger', () => {
 	});
 
 	it('rolls the day and month windows over without touching the other', () => {
-		vi.stubEnv('OMNISEARCH_SPEND_CAPS', 'exa:daily:usd=1');
+		vi.stubEnv('RETRIEVER_SPEND_CAPS', 'exa:daily:usd=1');
 		record_spend('exa', { usd: 0.4 }, { now: noon });
 		const next_day = new Date('2026-10-02T01:00:00.000Z');
 		record_spend('exa', { usd: 0.3 }, { now: next_day });
@@ -191,7 +191,7 @@ describe('ledger', () => {
 
 	it('adds only the increment of cumulative job usage', () => {
 		vi.stubEnv(
-			'OMNISEARCH_SPEND_CAPS',
+			'RETRIEVER_SPEND_CAPS',
 			'firecrawl:monthly:credits=100',
 		);
 		const job = { job_id: 'job-1', now: noon };
@@ -231,7 +231,7 @@ describe('ledger', () => {
 
 	it('refuses a provider whose family or exact cap is reached', () => {
 		vi.stubEnv(
-			'OMNISEARCH_SPEND_CAPS',
+			'RETRIEVER_SPEND_CAPS',
 			'exa:daily:usd=0.02,tavily_extract:monthly:credits=3,brave:daily:credits=0',
 		);
 		record_spend('exa', { usd: 0.007 }, { now: noon });
@@ -337,7 +337,7 @@ describe('ledger', () => {
 	});
 
 	it('ignores malformed usage, cached-only and empty reports', () => {
-		vi.stubEnv('OMNISEARCH_SPEND_CAPS', 'exa:daily:usd=1');
+		vi.stubEnv('RETRIEVER_SPEND_CAPS', 'exa:daily:usd=1');
 		record_spend('exa', null, { now: noon });
 		record_spend(
 			'exa',
@@ -350,7 +350,7 @@ describe('ledger', () => {
 	});
 
 	it('survives a malformed or unreadable ledger file by keeping in-process totals', () => {
-		vi.stubEnv('OMNISEARCH_SPEND_CAPS', 'exa:daily:usd=1');
+		vi.stubEnv('RETRIEVER_SPEND_CAPS', 'exa:daily:usd=1');
 		writeFileSync(ledger(), '{not json');
 		record_spend('exa', { usd: 0.5 }, { now: noon });
 		expect(read_ledger().providers.exa.day.usd).toBe(0.5);
@@ -396,7 +396,7 @@ describe('ledger', () => {
 	});
 
 	it('merges with totals another process wrote between calls', () => {
-		vi.stubEnv('OMNISEARCH_SPEND_CAPS', 'exa:daily:usd=1');
+		vi.stubEnv('RETRIEVER_SPEND_CAPS', 'exa:daily:usd=1');
 		record_spend('exa', { usd: 0.1 }, { now: noon });
 		const other = read_ledger();
 		other.providers.exa.day.usd = 0.6;

@@ -225,7 +225,7 @@ const async_result_bytes = (
 ) =>
 	Buffer.byteLength(
 		JSON.stringify({
-			_meta: { omnisearch: { ...metadata, local_completeness } },
+			_meta: { retriever: { ...metadata, local_completeness } },
 			content: [{ type: 'text', text }],
 			...(failed ? { isError: true } : {}),
 		}),

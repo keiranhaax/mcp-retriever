@@ -37,7 +37,7 @@ const bounded = (
 /** Default window in ms; 0 disables cooldowns entirely. */
 export const cooldown_settings = () => ({
 	default_ms: bounded(
-		process.env.OMNISEARCH_PROVIDER_COOLDOWN_MS,
+		process.env.RETRIEVER_PROVIDER_COOLDOWN_MS,
 		DEFAULT_COOLDOWN_MS,
 		MAX_COOLDOWN_MS,
 	),

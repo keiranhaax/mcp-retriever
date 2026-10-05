@@ -1,9 +1,9 @@
 services:
-  mcp-omnisearch:
+  mcp-retriever:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: mcp-omnisearch
+    container_name: mcp-retriever
     restart: unless-stopped
     # Compose's interpolation .env is not injected automatically.
     env_file:

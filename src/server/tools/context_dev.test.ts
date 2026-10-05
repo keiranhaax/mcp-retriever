@@ -505,7 +505,7 @@ describe('Context.dev provider health key', () => {
 						jsonrpc: '2.0',
 						id: ++sequence,
 						method: 'resources/read',
-						params: { uri: 'omnisearch://providers/status' },
+						params: { uri: 'retriever://providers/status' },
 					},
 					{} as any,
 				)

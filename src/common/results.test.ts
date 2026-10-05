@@ -12,20 +12,18 @@ import { ErrorType } from './types.js';
 let result_dir: string;
 
 beforeEach(() => {
-	result_dir = mkdtempSync(
-		join(tmpdir(), 'omnisearch-results-test-'),
-	);
-	process.env.OMNISEARCH_RESULT_DIR = result_dir;
+	result_dir = mkdtempSync(join(tmpdir(), 'retriever-results-test-'));
+	process.env.RETRIEVER_RESULT_DIR = result_dir;
 });
 
 afterEach(() => {
-	delete process.env.OMNISEARCH_RESULT_DIR;
+	delete process.env.RETRIEVER_RESULT_DIR;
 	rmSync(result_dir, { recursive: true, force: true });
 });
 
 describe('handle_large_result', () => {
 	it('skips optional readable formatting when canonical JSON needs compression', () => {
-		process.env.OMNISEARCH_RESULT_MAX_BYTES = '10000';
+		process.env.RETRIEVER_RESULT_MAX_BYTES = '10000';
 		let raw_reads = 0;
 		const original = {
 			content: 'body'.repeat(30000),
@@ -51,12 +49,12 @@ describe('handle_large_result', () => {
 				read_result_chunk(pointer.result_id).content.startsWith('{'),
 			).toBe(true);
 		} finally {
-			delete process.env.OMNISEARCH_RESULT_MAX_BYTES;
+			delete process.env.RETRIEVER_RESULT_MAX_BYTES;
 		}
 	});
 	it.each([
-		'OMNISEARCH_RESULT_MAX_BYTES',
-		'OMNISEARCH_RESULT_STORE_MAX_BYTES',
+		'RETRIEVER_RESULT_MAX_BYTES',
+		'RETRIEVER_RESULT_STORE_MAX_BYTES',
 	])(
 		'uses canonical-only storage when the readable view exceeds %s',
 		(setting) => {
@@ -87,7 +85,7 @@ describe('handle_large_result', () => {
 	it('retains canonical JSON even when it exactly fills the quota', () => {
 		const original = { content: 'a'.repeat(90000) };
 		const canonical = JSON.stringify(original, null, 2);
-		process.env.OMNISEARCH_RESULT_MAX_BYTES = String(
+		process.env.RETRIEVER_RESULT_MAX_BYTES = String(
 			Buffer.byteLength(canonical),
 		);
 		try {
@@ -101,7 +99,7 @@ describe('handle_large_result', () => {
 				),
 			).toBe(canonical);
 		} finally {
-			delete process.env.OMNISEARCH_RESULT_MAX_BYTES;
+			delete process.env.RETRIEVER_RESULT_MAX_BYTES;
 		}
 	});
 
@@ -216,13 +214,13 @@ describe('handle_large_result', () => {
 			Buffer.byteLength(JSON.stringify(original, null, 2)) +
 			Buffer.byteLength(content) +
 			1000;
-		process.env.OMNISEARCH_RESULT_MAX_BYTES = String(bytes);
+		process.env.RETRIEVER_RESULT_MAX_BYTES = String(bytes);
 		try {
 			expect(handle_large_result(original, 'fixture')).toHaveProperty(
 				'result_id',
 			);
 		} finally {
-			delete process.env.OMNISEARCH_RESULT_MAX_BYTES;
+			delete process.env.RETRIEVER_RESULT_MAX_BYTES;
 		}
 	});
 

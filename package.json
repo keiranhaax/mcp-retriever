@@ -1,7 +1,7 @@
 {
-	"name": "mcp-omnisearch",
+	"name": "mcp-retriever",
 	"version": "0.0.24",
-	"description": "MCP server for integrating Omnisearch with LLMs",
+	"description": "MCP server for multi-provider web search and content retrieval",
 	"keywords": [
 		"ai",
 		"brave-search",
@@ -29,7 +29,7 @@
 	"license": "MIT",
 	"author": "Scott Spence",
 	"bin": {
-		"mcp-omnisearch": "./dist/index.js"
+		"mcp-retriever": "./dist/index.js"
 	},
 	"files": [
 		"dist",
@@ -72,5 +72,5 @@
 		"node": ">=22.0.0"
 	},
 	"packageManager": "pnpm@11.9.0",
-	"mcpName": "io.github.spences10/mcp-omnisearch"
+	"mcpName": "io.github.keiranhaax/mcp-retriever"
 }

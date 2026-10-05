@@ -137,11 +137,11 @@ const enable_firecrawl = () => {
 };
 
 beforeEach(() => {
-	directory = mkdtempSync(join(tmpdir(), 'omnisearch-focused-web-'));
+	directory = mkdtempSync(join(tmpdir(), 'retriever-focused-web-'));
 	vi.stubEnv('HOME', directory);
-	vi.stubEnv('OMNISEARCH_RESULT_DIR', directory);
-	vi.stubEnv('OMNISEARCH_RESULT_MAX_BYTES', '10000000');
-	vi.stubEnv('OMNISEARCH_RESULT_STORE_MAX_BYTES', '20000000');
+	vi.stubEnv('RETRIEVER_RESULT_DIR', directory);
+	vi.stubEnv('RETRIEVER_RESULT_MAX_BYTES', '10000000');
+	vi.stubEnv('RETRIEVER_RESULT_STORE_MAX_BYTES', '20000000');
 	for (const item of settings) item.api_key = undefined;
 	config.processing.tavily_extract.api_key = fixture_key;
 	vi.stubGlobal('fetch', fetch_mock);
@@ -841,8 +841,8 @@ it.each(['web_read', 'web_map', 'web_crawl'])(
 	'keeps %s evidence-retention failure local instead of blaming the provider',
 	async (name) => {
 		enable_firecrawl();
-		vi.stubEnv('OMNISEARCH_RESULT_MAX_BYTES', '1');
-		vi.stubEnv('OMNISEARCH_RESULT_STORE_MAX_BYTES', '1');
+		vi.stubEnv('RETRIEVER_RESULT_MAX_BYTES', '1');
+		vi.stubEnv('RETRIEVER_RESULT_STORE_MAX_BYTES', '1');
 		vi.useFakeTimers();
 		const evidence = 'PRIVATE_FULL_EVIDENCE'.repeat(1000);
 		if (name === 'web_read') respond_read(evidence);
@@ -1119,8 +1119,8 @@ it.each(['web_read', 'web_crawl'])(
 it.each([undefined, 'legacy', 'full', 'compact'] as const)(
 	'keeps read retention failure local for response mode %s',
 	async (response_mode) => {
-		vi.stubEnv('OMNISEARCH_RESULT_MAX_BYTES', '1');
-		vi.stubEnv('OMNISEARCH_RESULT_STORE_MAX_BYTES', '1');
+		vi.stubEnv('RETRIEVER_RESULT_MAX_BYTES', '1');
+		vi.stubEnv('RETRIEVER_RESULT_STORE_MAX_BYTES', '1');
 		respond_read('PRIVATE_FULL_EVIDENCE'.repeat(5000));
 		const response = await call('web_read', {
 			url,

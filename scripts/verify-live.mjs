@@ -16,9 +16,9 @@ import { parseEnv } from 'node:util';
 // Explicitly invoked live verification, never part of the default test suite.
 // The parent reviews pricing and reserves each case's allowance before networking.
 // This enforces request counts, not provider billing or automatic top-up policies.
-if (process.env.OMNISEARCH_LIVE_GUARD === '1') {
+if (process.env.RETRIEVER_LIVE_GUARD === '1') {
 	const nativeFetch = globalThis.fetch;
-	const rules = JSON.parse(process.env.OMNISEARCH_LIVE_RULES);
+	const rules = JSON.parse(process.env.RETRIEVER_LIVE_RULES);
 	const counts = new Map();
 	globalThis.fetch = async (input, options = {}) => {
 		const url = new URL(
@@ -40,7 +40,7 @@ if (process.env.OMNISEARCH_LIVE_GUARD === '1') {
 			attempt: count,
 		};
 		appendFileSync(
-			process.env.OMNISEARCH_LIVE_EVENTS,
+			process.env.RETRIEVER_LIVE_EVENTS,
 			`${JSON.stringify({ ...event, phase: 'start' })}\n`,
 			{ mode: 0o600 },
 		);
@@ -70,7 +70,7 @@ if (process.env.OMNISEARCH_LIVE_GUARD === '1') {
 			/* The provider code owns response-shape errors. */
 		}
 		appendFileSync(
-			process.env.OMNISEARCH_LIVE_EVENTS,
+			process.env.RETRIEVER_LIVE_EVENTS,
 			`${JSON.stringify({ ...event, phase: 'response', http_status: response.status, metadata })}\n`,
 			{ mode: 0o600 },
 		);
@@ -82,7 +82,7 @@ if (process.env.OMNISEARCH_LIVE_GUARD === '1') {
 
 async function main() {
 	assert.equal(
-		process.env.OMNISEARCH_LIVE_APPROVED,
+		process.env.RETRIEVER_LIVE_APPROVED,
 		'5',
 		'Explicit $5 live-test approval required',
 	);
@@ -139,16 +139,16 @@ async function main() {
 		requireProxy.resolve('@modelcontextprotocol/client/stdio')
 	);
 	const credentials = parseEnv(readFileSync(envArg, 'utf8'));
-	const home = mkdtempSync(join(tmpdir(), 'omnisearch-live-home-'));
+	const home = mkdtempSync(join(tmpdir(), 'retriever-live-home-'));
 	const events = `${ledger}.requests.jsonl`;
 	const env = {
 		HOME: home,
 		PATH: `${dirname(process.execPath)}:${process.env.PATH}`,
 		NODE_ENV: 'test',
-		OMNISEARCH_RESULT_DIR: join(home, 'results'),
-		OMNISEARCH_LIVE_GUARD: '1',
-		OMNISEARCH_LIVE_RULES: JSON.stringify(plan.rules),
-		OMNISEARCH_LIVE_EVENTS: events,
+		RETRIEVER_RESULT_DIR: join(home, 'results'),
+		RETRIEVER_LIVE_GUARD: '1',
+		RETRIEVER_LIVE_RULES: JSON.stringify(plan.rules),
+		RETRIEVER_LIVE_EVENTS: events,
 		NODE_OPTIONS: `--import=${fileURLToPath(import.meta.url)}`,
 	};
 	for (const key of [

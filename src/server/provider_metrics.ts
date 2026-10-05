@@ -5,7 +5,7 @@ import type { ProviderCategory } from './provider_health.js';
  * In-process counters per provider and per tool: calls, outcomes by
  * public error kind, latency distribution and provider-reported usage.
  * Fed by the health markers so every tool records the same way; read
- * through the `omnisearch://providers/status` resource.
+ * through the `retriever://providers/status` resource.
  */
 
 export interface ProviderUsage {
@@ -170,8 +170,8 @@ const apply = (
 };
 
 const call_log_enabled = () =>
-	process.env.OMNISEARCH_CALL_LOG === '1' ||
-	process.env.OMNISEARCH_CALL_LOG === 'true';
+	process.env.RETRIEVER_CALL_LOG === '1' ||
+	process.env.RETRIEVER_CALL_LOG === 'true';
 
 export const record_provider_outcome = (
 	outcome: ProviderOutcome,
@@ -198,7 +198,7 @@ export const record_provider_outcome = (
 		if (is_measurement(outcome.usage?.usd))
 			fields.push(`usd=${outcome.usage!.usd}`);
 		if (outcome.cached) fields.push('cached=1');
-		console.error(`omnisearch call ${fields.join(' ')}`);
+		console.error(`retriever call ${fields.join(' ')}`);
 	}
 };
 

@@ -338,7 +338,7 @@ describe('eval-search script', () => {
 		});
 
 	it('scores a recorded run offline into the requested report directory', () => {
-		out = mkdtempSync(join(tmpdir(), 'omnisearch-eval-report-'));
+		out = mkdtempSync(join(tmpdir(), 'retriever-eval-report-'));
 		const result = run_script([
 			'--input',
 			fileURLToPath(new URL('synthetic-run.json', directory)),
@@ -367,7 +367,7 @@ describe('eval-search script', () => {
 	});
 
 	it('refuses live mode without explicit budgets and prints usage otherwise', () => {
-		out = mkdtempSync(join(tmpdir(), 'omnisearch-eval-report-'));
+		out = mkdtempSync(join(tmpdir(), 'retriever-eval-report-'));
 		const live = run_script([
 			'--live',
 			'--providers',

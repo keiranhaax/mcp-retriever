@@ -79,8 +79,8 @@ class LauncherTests(unittest.TestCase):
             "MCP_API_KEY": api_key,
             "YOU_API_KEY": provider_value,
             "FIRECRAWL_BASE_URL": "http://127.0.0.1:9999/v2",
-            "OMNISEARCH_RESULT_DIR": "/tmp/fixture-results",
-            "OMNISEARCH_RESULT_MAX_BYTES": "4096",
+            "RETRIEVER_RESULT_DIR": "/tmp/fixture-results",
+            "RETRIEVER_RESULT_MAX_BYTES": "4096",
         }
         config_paths = []
         mcpo_main = types.ModuleType("mcpo.main")
@@ -97,8 +97,8 @@ class LauncherTests(unittest.TestCase):
             self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o600)
             self.assertEqual(stat.S_IMODE(path.parent.stat().st_mode), 0o700)
             config = json.loads(path.read_text())
-            self.assertEqual(list(config["mcpServers"]), ["omnisearch"])
-            server = config["mcpServers"]["omnisearch"]
+            self.assertEqual(list(config["mcpServers"]), ["retriever"])
+            server = config["mcpServers"]["retriever"]
             self.assertEqual(server["command"], "node")
             self.assertEqual(server["args"], [str(LAUNCHER.resolve().parent.parent / "dist/index.js")])
             self.assertEqual(server["env"], {k: v for k, v in env.items() if k != "MCP_API_KEY"})

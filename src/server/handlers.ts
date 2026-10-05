@@ -16,14 +16,14 @@ export const setup_handlers = (server: McpServer<GenericSchema>) => {
 		{
 			name: 'provider-status',
 			description: 'Current status of all search providers',
-			uri: 'omnisearch://providers/status',
+			uri: 'retriever://providers/status',
 		},
 		async () => {
 			const health_summary = get_provider_health_summary();
 			return {
 				contents: [
 					{
-						uri: 'omnisearch://providers/status',
+						uri: 'retriever://providers/status',
 						mimeType: 'application/json',
 						text: JSON.stringify(
 							{
@@ -70,12 +70,12 @@ export const setup_handlers = (server: McpServer<GenericSchema>) => {
 		{
 			name: 'provider-info',
 			description: 'Registration and runtime health for a provider',
-			uri: 'omnisearch://search/{provider}/info',
+			uri: 'retriever://search/{provider}/info',
 		},
 		async (uri) => {
 			// Handle provider info template
 			const providerMatch = uri.match(
-				/^omnisearch:\/\/search\/([^/]+)\/info$/,
+				/^retriever:\/\/search\/([^/]+)\/info$/,
 			);
 			if (providerMatch) {
 				const providerName = providerMatch[1];

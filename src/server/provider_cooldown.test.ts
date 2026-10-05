@@ -73,14 +73,14 @@ describe('cooldown_settings', () => {
 			default_ms: 60_000,
 			max_ms: 900_000,
 		});
-		vi.stubEnv('OMNISEARCH_PROVIDER_COOLDOWN_MS', '5000');
+		vi.stubEnv('RETRIEVER_PROVIDER_COOLDOWN_MS', '5000');
 		expect(cooldown_settings().default_ms).toBe(5000);
-		vi.stubEnv('OMNISEARCH_PROVIDER_COOLDOWN_MS', '0');
+		vi.stubEnv('RETRIEVER_PROVIDER_COOLDOWN_MS', '0');
 		expect(cooldown_settings().default_ms).toBe(0);
-		vi.stubEnv('OMNISEARCH_PROVIDER_COOLDOWN_MS', String(2 ** 40));
+		vi.stubEnv('RETRIEVER_PROVIDER_COOLDOWN_MS', String(2 ** 40));
 		expect(cooldown_settings().default_ms).toBe(900_000);
 		for (const raw of ['-1', '1.5', 'soon', '1e3'])
-			(vi.stubEnv('OMNISEARCH_PROVIDER_COOLDOWN_MS', raw),
+			(vi.stubEnv('RETRIEVER_PROVIDER_COOLDOWN_MS', raw),
 				expect(cooldown_settings().default_ms).toBe(60_000));
 	});
 });
@@ -265,7 +265,7 @@ describe('note_provider_failure', () => {
 	});
 
 	it('follows the configured default and never shortens a running window', () => {
-		vi.stubEnv('OMNISEARCH_PROVIDER_COOLDOWN_MS', '5000');
+		vi.stubEnv('RETRIEVER_PROVIDER_COOLDOWN_MS', '5000');
 		note_provider_failure('search', 'fixture', rate_limited(), now);
 		expect(
 			get_provider_cooldown('search', 'fixture', now)?.until,
@@ -291,7 +291,7 @@ describe('note_provider_failure', () => {
 	});
 
 	it('is disabled entirely by a zero default', () => {
-		vi.stubEnv('OMNISEARCH_PROVIDER_COOLDOWN_MS', '0');
+		vi.stubEnv('RETRIEVER_PROVIDER_COOLDOWN_MS', '0');
 		note_provider_failure(
 			'search',
 			'fixture',

@@ -12,7 +12,7 @@ import { ErrorType, ProviderError } from '../common/types.js';
 /**
  * Optional per-account spending caps over a UTC day or month, enforced
  * before a paid provider call and fed by provider-reported usage after
- * it. Off unless OMNISEARCH_SPEND_CAPS is set; then running totals
+ * it. Off unless RETRIEVER_SPEND_CAPS is set; then running totals
  * persist in the private result directory so a restart does not reset
  * them. USD and credits are separate units and are never converted.
  *
@@ -81,7 +81,7 @@ const cap_matches = (account: string, provider: string) =>
 	account === provider || account === spend_family(provider);
 
 /**
- * Parse OMNISEARCH_SPEND_CAPS: comma-separated
+ * Parse RETRIEVER_SPEND_CAPS: comma-separated
  * `account:daily|monthly:usd|credits=amount` entries. Malformed input
  * throws so a mistyped cap fails startup instead of silently not
  * applying; the message only echoes the operator's own setting.
@@ -99,26 +99,26 @@ export const parse_spend_caps = (
 			/^([^:=]+):(daily|monthly):(usd|credits)=([^=]+)$/.exec(text);
 		if (!match)
 			throw new Error(
-				`Invalid OMNISEARCH_SPEND_CAPS entry "${text}": expected account:daily|monthly:usd|credits=amount`,
+				`Invalid RETRIEVER_SPEND_CAPS entry "${text}": expected account:daily|monthly:usd|credits=amount`,
 			);
 		const [, account, period, unit, amount_text] = match;
 		if (!ACCOUNT_PATTERN.test(account))
 			throw new Error(
-				`Invalid OMNISEARCH_SPEND_CAPS account "${account}": use lowercase letters, digits and underscores`,
+				`Invalid RETRIEVER_SPEND_CAPS account "${account}": use lowercase letters, digits and underscores`,
 			);
 		if (!AMOUNT_PATTERN.test(amount_text))
 			throw new Error(
-				`Invalid OMNISEARCH_SPEND_CAPS amount "${amount_text}" for ${account}: use a non-negative decimal number`,
+				`Invalid RETRIEVER_SPEND_CAPS amount "${amount_text}" for ${account}: use a non-negative decimal number`,
 			);
 		const amount = Number(amount_text);
 		if (!Number.isFinite(amount) || amount > MAX_CAP_AMOUNT)
 			throw new Error(
-				`Invalid OMNISEARCH_SPEND_CAPS amount "${amount_text}" for ${account}: exceeds ${MAX_CAP_AMOUNT}`,
+				`Invalid RETRIEVER_SPEND_CAPS amount "${amount_text}" for ${account}: exceeds ${MAX_CAP_AMOUNT}`,
 			);
 		const key = `${account}:${period}:${unit}`;
 		if (seen.has(key))
 			throw new Error(
-				`Duplicate OMNISEARCH_SPEND_CAPS entry for ${key}`,
+				`Duplicate RETRIEVER_SPEND_CAPS entry for ${key}`,
 			);
 		seen.add(key);
 		caps.push({
@@ -132,7 +132,7 @@ export const parse_spend_caps = (
 };
 
 export const configured_spend_caps = (): SpendCap[] =>
-	parse_spend_caps(process.env.OMNISEARCH_SPEND_CAPS);
+	parse_spend_caps(process.env.RETRIEVER_SPEND_CAPS);
 
 const day_key = (now: Date) => now.toISOString().slice(0, 10);
 const month_key = (now: Date) => now.toISOString().slice(0, 7);

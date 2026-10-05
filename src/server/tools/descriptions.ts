@@ -27,7 +27,7 @@ export const tool_descriptions = {
 		'Context.dev Transactions: identify messy bank/card transaction descriptors as real brands or companies.',
 } as const;
 
-export type OmnisearchToolName = keyof typeof tool_descriptions;
+export type RetrieverToolName = keyof typeof tool_descriptions;
 
 export const describe_ai_search = (
 	provider_names: string[],

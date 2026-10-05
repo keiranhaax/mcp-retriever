@@ -484,7 +484,7 @@ describe('http_json', () => {
 		);
 		expect(fetch_mock).toHaveBeenCalledTimes(2);
 
-		vi.stubEnv('OMNISEARCH_HTTP_CACHE_BYTES', '1048576');
+		vi.stubEnv('RETRIEVER_HTTP_CACHE_BYTES', '1048576');
 		try {
 			const first = await http_json(
 				'fixture',
@@ -548,7 +548,7 @@ describe('http_json', () => {
 
 	it('does not cache failed responses', async () => {
 		reset_http_cache();
-		vi.stubEnv('OMNISEARCH_HTTP_CACHE_BYTES', '1048576');
+		vi.stubEnv('RETRIEVER_HTTP_CACHE_BYTES', '1048576');
 		try {
 			fetch_mock.mockImplementation(async () =>
 				fetch_mock.mock.calls.length === 1

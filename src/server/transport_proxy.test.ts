@@ -53,7 +53,7 @@ const start_fixture = async (max_inflight = 16) => {
 		stderr: 'pipe',
 		env: {
 			PATH: process.env.PATH ?? '',
-			OMNISEARCH_MAX_INFLIGHT: String(max_inflight),
+			RETRIEVER_MAX_INFLIGHT: String(max_inflight),
 		},
 	});
 	let stderr = '';

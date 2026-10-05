@@ -102,7 +102,7 @@ describe('You response contract', () => {
 		);
 		await expect(
 			new YouSearchProvider().search({
-				query: 'mcp-omnisearch C++ OR docs',
+				query: 'mcp-retriever C++ OR docs',
 			}),
 		).resolves.toMatchObject([
 			{ snippet: 'One Two' },
@@ -113,7 +113,7 @@ describe('You response contract', () => {
 		expect(options.method).toBe('GET');
 		expect(options.headers.Authorization).toBe('Bearer you-test-key');
 		expect(new URL(url).searchParams.get('query')).toBe(
-			'mcp-omnisearch C++ OR docs',
+			'mcp-retriever C++ OR docs',
 		);
 	});
 });

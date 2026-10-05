@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { createInterface } from 'node:readline';
 
 const root = fileURLToPath(new URL('../../../../', import.meta.url));
-const home = await mkdtemp(join(tmpdir(), 'omnisearch-p2-built-'));
+const home = await mkdtemp(join(tmpdir(), 'retriever-p2-built-'));
 const job_id = '12345678-1234-4234-8234-123456789abc';
 const request_id = 'p2-built-request';
 const url = 'https://example.test/report?edition=2';
@@ -42,7 +42,7 @@ const child = spawn(process.execPath, ['dist/index.js'], {
 	env: {
 		PATH: process.env.PATH,
 		HOME: home,
-		OMNISEARCH_RESULT_DIR: join(home, 'results'),
+		RETRIEVER_RESULT_DIR: join(home, 'results'),
 		TAVILY_API_KEY: 'p2-offline-fixture-key',
 		FIRECRAWL_API_KEY: 'p2-offline-fixture-key',
 		EXA_API_KEY: 'p2-offline-fixture-key',
@@ -147,10 +147,10 @@ try {
 		['firecrawl_agent', { action: 'status', job_id }],
 	]) {
 		const response = await call(name, args, true);
-		assert.equal(response._meta.omnisearch.job.state, 'failed');
-		assert.equal(response._meta.omnisearch.job.partial, true);
+		assert.equal(response._meta.retriever.job.state, 'failed');
+		assert.equal(response._meta.retriever.job.partial, true);
 		assert.equal(
-			response._meta.omnisearch.local_completeness,
+			response._meta.retriever.local_completeness,
 			'retained',
 		);
 		const recovered = await reconstruct(
@@ -172,13 +172,13 @@ try {
 	const started = await call('firecrawl_agent', {
 		prompt: 'offline fixture',
 	});
-	assert.equal(started._meta.omnisearch.job.id, job_id);
+	assert.equal(started._meta.retriever.job.id, job_id);
 	const cancelled = await call('firecrawl_agent', {
 		action: 'cancel',
 		job_id,
 	});
 	assert.equal(
-		cancelled._meta.omnisearch.job.cancellation,
+		cancelled._meta.retriever.job.cancellation,
 		'confirmed',
 	);
 	for (const [name, args] of [

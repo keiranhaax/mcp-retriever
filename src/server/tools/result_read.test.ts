@@ -25,11 +25,11 @@ let result_dir: string;
 
 beforeEach(() => {
 	result_dir = mkdtempSync(join(tmpdir(), 'result-read-tool-test-'));
-	process.env.OMNISEARCH_RESULT_DIR = result_dir;
+	process.env.RETRIEVER_RESULT_DIR = result_dir;
 });
 
 afterEach(() => {
-	delete process.env.OMNISEARCH_RESULT_DIR;
+	delete process.env.RETRIEVER_RESULT_DIR;
 	rmSync(result_dir, { recursive: true, force: true });
 });
 
@@ -108,7 +108,7 @@ describe('result_read tool', () => {
 	it('returns a sanitized MCP error for compressed corruption', async () => {
 		const { server, tools } = create_mock_server();
 		register_result_read(server as any);
-		process.env.OMNISEARCH_RESULT_MAX_BYTES = '100';
+		process.env.RETRIEVER_RESULT_MAX_BYTES = '100';
 		try {
 			const stored = store_result('a'.repeat(10000));
 			const path = join(result_dir, `${stored.result_id}.omr`);
@@ -124,7 +124,7 @@ describe('result_read tool', () => {
 			);
 			expect(response.content[0].text).not.toContain(result_dir);
 		} finally {
-			delete process.env.OMNISEARCH_RESULT_MAX_BYTES;
+			delete process.env.RETRIEVER_RESULT_MAX_BYTES;
 		}
 	});
 	it('registers as a local read-only tool and returns a requested chunk', async () => {

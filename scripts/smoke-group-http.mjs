@@ -15,7 +15,7 @@ const unusedPort = async () => {
 	await new Promise((resolve) => server.close(resolve));
 	return port;
 };
-const home = await mkdtemp(join(tmpdir(), 'omnisearch-group-http-'));
+const home = await mkdtemp(join(tmpdir(), 'retriever-group-http-'));
 const port = await unusedPort();
 const upstream = await unusedPort();
 assert.notEqual(port, upstream);
@@ -28,8 +28,8 @@ const env = {
 	GUARD_UPSTREAM_PORT: String(upstream),
 	GUARD_ALLOWED_HOSTS: `127.0.0.1:${port}`,
 	MCP_API_KEY: 'group-transport-fixture',
-	OMNISEARCH_TOOL_GROUPS: 'research',
-	OMNISEARCH_RESULT_DIR: join(home, 'results'),
+	RETRIEVER_TOOL_GROUPS: 'research',
+	RETRIEVER_RESULT_DIR: join(home, 'results'),
 	NODE_OPTIONS:
 		'--import=data:text/javascript,globalThis.fetch=async()=>{console.error("GROUP_PROVIDER_ATTEMPT");throw%20new%20Error("GROUP_PROVIDER_BLOCKED")}',
 };

@@ -59,21 +59,21 @@ for (const groups of [
 	'research,automation',
 ]) {
 	const home = await mkdtemp(
-		join(tmpdir(), 'omnisearch-groups-smoke-'),
+		join(tmpdir(), 'retriever-groups-smoke-'),
 	);
 	const child = spawn(process.execPath, ['dist/index.js'], {
 		env: {
 			PATH: process.env.PATH,
 			HOME: home,
 			NODE_ENV: 'test',
-			OMNISEARCH_RESULT_DIR: join(home, 'results'),
+			RETRIEVER_RESULT_DIR: join(home, 'results'),
 			NODE_OPTIONS: `--import=data:text/javascript,${encodeURIComponent(deny)}`,
 			...Object.fromEntries(
 				keys.map((key) => [key, 'group-offline-fixture']),
 			),
 			...(groups === undefined
 				? {}
-				: { OMNISEARCH_TOOL_GROUPS: groups }),
+				: { RETRIEVER_TOOL_GROUPS: groups }),
 		},
 		stdio: ['pipe', 'pipe', 'pipe'],
 	});
@@ -119,7 +119,7 @@ for (const groups of [
 			const stopped = await exit;
 			clearTimeout(watchdog);
 			assert.equal(stopped.code, 1);
-			assert(logs.includes('Invalid OMNISEARCH_TOOL_GROUPS'));
+			assert(logs.includes('Invalid RETRIEVER_TOOL_GROUPS'));
 			assert(!logs.includes('PRIVATE_INVALID_GROUP'));
 			assert(!logs.includes('GROUP_NETWORK_ATTEMPT'));
 			results.push({

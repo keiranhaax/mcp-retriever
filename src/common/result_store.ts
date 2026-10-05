@@ -70,11 +70,11 @@ const storage_error = (message: string) =>
 	);
 
 const get_result_dir = () =>
-	process.env.OMNISEARCH_RESULT_DIR ||
-	join(homedir(), '.cache', 'mcp-omnisearch', 'results');
+	process.env.RETRIEVER_RESULT_DIR ||
+	join(homedir(), '.cache', 'mcp-retriever', 'results');
 
 const get_result_ttl_ms = () => {
-	const configured = Number(process.env.OMNISEARCH_RESULT_TTL_MS);
+	const configured = Number(process.env.RETRIEVER_RESULT_TTL_MS);
 	if (!Number.isFinite(configured) || configured <= 0) {
 		return DEFAULT_RESULT_TTL_MS;
 	}
@@ -90,13 +90,13 @@ const get_byte_limit = (name: string, fallback: number) => {
 
 const get_max_result_bytes = () =>
 	get_byte_limit(
-		'OMNISEARCH_RESULT_MAX_BYTES',
+		'RETRIEVER_RESULT_MAX_BYTES',
 		DEFAULT_MAX_RESULT_BYTES,
 	);
 
 const get_max_store_bytes = () =>
 	get_byte_limit(
-		'OMNISEARCH_RESULT_STORE_MAX_BYTES',
+		'RETRIEVER_RESULT_STORE_MAX_BYTES',
 		DEFAULT_MAX_STORE_BYTES,
 	);
 

@@ -6,7 +6,7 @@ script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 cd "${script_dir}"
 
 # Read only GitHub credentials from the shared copilot-api environment. Do not
-# inherit unrelated secrets into the Omnisearch process.
+# inherit unrelated secrets into the Retriever process.
 copilot_github_api_key=''
 if [[ -f /home/ubuntu/copilot-api/.env ]]; then
 	copilot_github_api_key="$(
@@ -25,7 +25,16 @@ if [[ -f .env ]]; then
 fi
 set +a
 
-# Keep GitHub auth centralized so omnisearch follows the token used by
+# The project was renamed from Omnisearch. Refuse legacy OMNISEARCH_*
+# settings instead of silently dropping them, which would switch off
+# controls such as spending caps. Print names only, never values.
+legacy_variables="$(compgen -v OMNISEARCH_ || true)"
+if [[ -n "${legacy_variables}" ]]; then
+	printf 'Rename legacy settings to RETRIEVER_*: %s\n' "${legacy_variables//$'\n'/ }" >&2
+	exit 1
+fi
+
+# Keep GitHub auth centralized so retriever follows the token used by
 # copilot-api after rotation without inheriting its full environment.
 export GITHUB_API_KEY="${copilot_github_api_key:-${GH_TOKEN:-${GITHUB_TOKEN:-${GITHUB_API_KEY:-}}}}"
 
@@ -84,11 +93,11 @@ clean_env=(
 
 # An explicitly empty group setting must reach the server and fail closed,
 # rather than becoming an unset value that enables the default full catalog.
-if [[ -v OMNISEARCH_TOOL_GROUPS ]]; then
-  clean_env+=("OMNISEARCH_TOOL_GROUPS=${OMNISEARCH_TOOL_GROUPS}")
+if [[ -v RETRIEVER_TOOL_GROUPS ]]; then
+  clean_env+=("RETRIEVER_TOOL_GROUPS=${RETRIEVER_TOOL_GROUPS}")
 fi
 
-# Pass only credentials and runtime controls used by Omnisearch. This prevents
+# Pass only credentials and runtime controls used by Retriever. This prevents
 # PM2 or an interactive deployment shell from leaking unrelated model secrets
 # into the MCP process.
 for variable in \
@@ -115,18 +124,18 @@ for variable in \
   GUARD_MAX_INFLIGHT_REQUESTS \
   GUARD_RATE_LIMIT_REQUESTS \
   GUARD_RATE_LIMIT_WINDOW_MS \
-  OMNISEARCH_MAX_INFLIGHT \
-  OMNISEARCH_STDIO_MAX_FRAME_BYTES \
-  OMNISEARCH_STDIO_MAX_OUTPUT_BYTES \
-  OMNISEARCH_RESULT_DIR \
-  OMNISEARCH_RESULT_TTL_MS \
-  OMNISEARCH_RESULT_MAX_BYTES \
-  OMNISEARCH_RESULT_STORE_MAX_BYTES \
-  OMNISEARCH_HTTP_CACHE_BYTES \
-  OMNISEARCH_HTTP_CACHE_TTL_MS \
-  OMNISEARCH_CALL_LOG \
-  OMNISEARCH_SPEND_CAPS \
-  OMNISEARCH_PROVIDER_COOLDOWN_MS
+  RETRIEVER_MAX_INFLIGHT \
+  RETRIEVER_STDIO_MAX_FRAME_BYTES \
+  RETRIEVER_STDIO_MAX_OUTPUT_BYTES \
+  RETRIEVER_RESULT_DIR \
+  RETRIEVER_RESULT_TTL_MS \
+  RETRIEVER_RESULT_MAX_BYTES \
+  RETRIEVER_RESULT_STORE_MAX_BYTES \
+  RETRIEVER_HTTP_CACHE_BYTES \
+  RETRIEVER_HTTP_CACHE_TTL_MS \
+  RETRIEVER_CALL_LOG \
+  RETRIEVER_SPEND_CAPS \
+  RETRIEVER_PROVIDER_COOLDOWN_MS
 do
   value="${!variable:-}"
   if [[ -n "${value}" ]]; then

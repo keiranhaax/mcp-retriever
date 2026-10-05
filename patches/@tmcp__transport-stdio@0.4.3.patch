@@ -34,13 +34,13 @@ index 571c1366cd9f68d76402d8070b191ad3c61628ba..0984660e213d0a40e5a5e528c0978aee
 +	#active = 0;
 +	#closed = false;
 +	#initialized = false;
-+	#max_output_bytes = limit('OMNISEARCH_STDIO_MAX_OUTPUT_BYTES', 1024 * 1024, 16 * 1024 * 1024);
++	#max_output_bytes = limit('RETRIEVER_STDIO_MAX_OUTPUT_BYTES', 1024 * 1024, 16 * 1024 * 1024);
 +	/** @type {Buffer[]} */
 +	#output = [];
 +	#output_bytes = 0;
 +	#backpressured = false;
-+	#max_frame_bytes = limit('OMNISEARCH_STDIO_MAX_FRAME_BYTES', 4 * 1024 * 1024, 16 * 1024 * 1024);
-+	#max_inflight = limit('OMNISEARCH_MAX_INFLIGHT', 16, 256);
++	#max_frame_bytes = limit('RETRIEVER_STDIO_MAX_FRAME_BYTES', 4 * 1024 * 1024, 16 * 1024 * 1024);
++	#max_inflight = limit('RETRIEVER_MAX_INFLIGHT', 16, 256);
 +
  	/**
  	 * @type {NonNullable<Partial<Context["sessionInfo"]>>}

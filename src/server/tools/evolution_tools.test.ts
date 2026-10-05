@@ -238,8 +238,8 @@ const reconstruct = async (id: string) => {
 };
 
 beforeEach(() => {
-	home = mkdtempSync(join(tmpdir(), 'omnisearch-p0-tools-'));
-	vi.stubEnv('OMNISEARCH_RESULT_DIR', join(home, 'results'));
+	home = mkdtempSync(join(tmpdir(), 'retriever-p0-tools-'));
+	vi.stubEnv('RETRIEVER_RESULT_DIR', join(home, 'results'));
 	sequence = 0;
 	unexpected = 0;
 	attempts.length = 0;
@@ -297,7 +297,7 @@ for (const scenario of cases) {
 				scenario.name === 'ai_search' ||
 				scenario.name === 'firecrawl_agent'
 			) {
-				expect(response.result._meta.omnisearch.error).toMatchObject({
+				expect(response.result._meta.retriever.error).toMatchObject({
 					kind: 'authentication',
 					http_status: 401,
 					retryable: false,
@@ -368,7 +368,7 @@ for (const scenario of cases) {
 				scenario.name === 'firecrawl_agent'
 			) {
 				expect(response.error).toBeUndefined();
-				expect(response.result._meta.omnisearch.error.kind).toBe(
+				expect(response.result._meta.retriever.error.kind).toBe(
 					'cancelled',
 				);
 				preserve_historical_snapshot();
@@ -435,7 +435,7 @@ describe('P0 research and Agent lifecycle gaps', () => {
 			expect(attempts).toHaveLength(1);
 			expect(attempts[0].method).toBe('GET');
 			expect(JSON.stringify(response)).not.toContain(canary);
-			expect(response.result._meta.omnisearch).toMatchObject({
+			expect(response.result._meta.retriever).toMatchObject({
 				error: { http_status: 404 },
 				job: { state: 'unknown' },
 			});
@@ -462,7 +462,7 @@ describe('P0 research and Agent lifecycle gaps', () => {
 			'GET',
 			'GET',
 		]);
-		expect(pending.result._meta.omnisearch.job).toMatchObject({
+		expect(pending.result._meta.retriever.job).toMatchObject({
 			state: 'running',
 			partial: true,
 		});
@@ -583,11 +583,11 @@ describe('P0 research and Agent lifecycle gaps', () => {
 			'DELETE',
 			'GET',
 		]);
-		expect(cancelled.result._meta.omnisearch.job).toMatchObject({
+		expect(cancelled.result._meta.retriever.job).toMatchObject({
 			state: 'cancelled',
 			cancellation: 'confirmed',
 		});
-		expect(readback.result._meta.omnisearch.job).toMatchObject({
+		expect(readback.result._meta.retriever.job).toMatchObject({
 			state: 'failed',
 		});
 		preserve_historical_snapshot();

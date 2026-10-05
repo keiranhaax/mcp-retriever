@@ -241,7 +241,7 @@ describe('TavilySearchProvider', () => {
 		).toBe(20);
 	});
 	it.each([
-		'mcp-omnisearch C++ filetype:pdf -outdated +manual intitle:guide lang:en',
+		'mcp-retriever C++ filetype:pdf -outdated +manual intitle:guide lang:en',
 		'"cats AND dogs" OR birds NOT fish site:example.com',
 	])('preserves all unmapped query syntax in %s', async (query) => {
 		fetch_mock.mockResolvedValue(

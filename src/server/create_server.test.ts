@@ -15,8 +15,8 @@ import { create_server } from './create_server.js';
 const original_key = config.search.brave.api_key;
 let result_dir: string;
 beforeEach(() => {
-	result_dir = mkdtempSync(join(tmpdir(), 'omnisearch-server-test-'));
-	vi.stubEnv('OMNISEARCH_RESULT_DIR', result_dir);
+	result_dir = mkdtempSync(join(tmpdir(), 'retriever-server-test-'));
+	vi.stubEnv('RETRIEVER_RESULT_DIR', result_dir);
 });
 afterEach(() => {
 	config.search.brave.api_key = original_key;
@@ -25,7 +25,7 @@ afterEach(() => {
 	rmSync(result_dir, { recursive: true, force: true });
 });
 
-describe('Omnisearch request context', () => {
+describe('Retriever request context', () => {
 	it('propagates a request cancellation to the provider fetch', async () => {
 		config.search.brave.api_key = 'offline-test-key';
 		const server = create_server({ name: 'audit', version: '1' });

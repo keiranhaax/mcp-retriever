@@ -86,7 +86,7 @@ afterEach(() => {
 	initialize_ai_search();
 });
 
-describe('Omnisearch tool descriptions', () => {
+describe('Retriever tool descriptions', () => {
 	it('does not promise citations from plain-text Brave Answers', () => {
 		const description = describe_ai_search(['brave_answers']);
 		expect(description).not.toContain('with citations');
@@ -130,7 +130,7 @@ describe('Omnisearch tool descriptions', () => {
 	});
 });
 
-describe('Omnisearch public tool schemas', () => {
+describe('Retriever public tool schemas', () => {
 	it('advertises distinct total and per-URL Brave snippet limits through JSON Schema', async () => {
 		const previous_key = config.processing.brave_llm_context.api_key;
 		try {

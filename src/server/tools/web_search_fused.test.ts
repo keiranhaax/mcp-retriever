@@ -79,9 +79,9 @@ const respond = (
 	});
 
 beforeEach(() => {
-	directory = mkdtempSync(join(tmpdir(), 'omnisearch-fused-'));
-	vi.stubEnv('OMNISEARCH_RESULT_DIR', directory);
-	vi.stubEnv('OMNISEARCH_HTTP_CACHE_BYTES', '0');
+	directory = mkdtempSync(join(tmpdir(), 'retriever-fused-'));
+	vi.stubEnv('RETRIEVER_RESULT_DIR', directory);
+	vi.stubEnv('RETRIEVER_HTTP_CACHE_BYTES', '0');
 	for (const item of settings) item.api_key = undefined;
 	config.search.tavily.api_key = 'fused-fixture-key';
 	config.search.exa.api_key = 'fused-fixture-key';
@@ -332,7 +332,7 @@ it('fails the call only when every provider failed', async () => {
 });
 
 it('refuses a capped provider before any request and keeps the others', async () => {
-	vi.stubEnv('OMNISEARCH_SPEND_CAPS', 'exa:daily:usd=0');
+	vi.stubEnv('RETRIEVER_SPEND_CAPS', 'exa:daily:usd=0');
 	server = create_server({ name: 'fused-offline', version: '1' });
 	respond({
 		'api.tavily.com': () =>

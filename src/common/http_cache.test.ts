@@ -31,11 +31,11 @@ describe('http cache', () => {
 	});
 
 	it('clamps and validates the environment settings', () => {
-		vi.stubEnv('OMNISEARCH_HTTP_CACHE_BYTES', '-5');
-		vi.stubEnv('OMNISEARCH_HTTP_CACHE_TTL_MS', 'soon');
+		vi.stubEnv('RETRIEVER_HTTP_CACHE_BYTES', '-5');
+		vi.stubEnv('RETRIEVER_HTTP_CACHE_TTL_MS', 'soon');
 		expect(cache_settings()).toEqual({ bytes: 0, ttl_ms: 300_000 });
-		vi.stubEnv('OMNISEARCH_HTTP_CACHE_BYTES', String(2 ** 40));
-		vi.stubEnv('OMNISEARCH_HTTP_CACHE_TTL_MS', String(2 ** 40));
+		vi.stubEnv('RETRIEVER_HTTP_CACHE_BYTES', String(2 ** 40));
+		vi.stubEnv('RETRIEVER_HTTP_CACHE_TTL_MS', String(2 ** 40));
 		expect(cache_settings()).toEqual({
 			bytes: 256 * 1024 * 1024,
 			ttl_ms: 24 * 60 * 60 * 1000,
@@ -91,8 +91,8 @@ describe('http cache', () => {
 	});
 
 	it('expires entries by ttl and evicts the least recently used by bytes', () => {
-		vi.stubEnv('OMNISEARCH_HTTP_CACHE_BYTES', '10');
-		vi.stubEnv('OMNISEARCH_HTTP_CACHE_TTL_MS', '1000');
+		vi.stubEnv('RETRIEVER_HTTP_CACHE_BYTES', '10');
+		vi.stubEnv('RETRIEVER_HTTP_CACHE_TTL_MS', '1000');
 		cache_set('a', '1234', 0);
 		cache_set('b', '5678', 0);
 		expect(cache_get('a', 500)).toBe('1234');

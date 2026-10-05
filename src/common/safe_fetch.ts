@@ -524,7 +524,7 @@ const request_page = async (
 					maxHeaderSize: limits.header_bytes,
 					insecureHTTPParser: false,
 					headers: {
-						'User-Agent': 'Omnisearch-LocalExtract/1.0',
+						'User-Agent': 'Retriever-LocalExtract/1.0',
 						Accept: 'text/html, application/xhtml+xml',
 						'Accept-Encoding': 'gzip, deflate, br',
 						Connection: 'close',

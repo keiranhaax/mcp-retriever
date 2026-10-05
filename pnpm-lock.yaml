@@ -24,7 +24,7 @@ overrides:
   vite@>=8.0.0 <8.0.16: 8.0.16
 
 patchedDependencies:
-  '@tmcp/transport-stdio@0.4.3': fed5c51fe47d7febaa2ae1433feabd3668c0009789e8d53627e60273038857a0
+  '@tmcp/transport-stdio@0.4.3': 616e49a58b11a4daa70f67e5bd97cffb36ad8dc5117a3a5c4a0ca8f8fa51347d
   mcp-proxy@6.7.3: c5c76bd9429a83f335291a97f1fb78ed20465f28dfcb872d0e0418da55b44f5e
   tmcp@1.19.4: cacb5fe5995acf4f2f888ebc2ce94fb0a5b9dc4740ed0db5d52deff5009163a1
 
@@ -37,7 +37,7 @@ importers:
         version: 0.1.6(tmcp@1.19.4(patch_hash=cacb5fe5995acf4f2f888ebc2ce94fb0a5b9dc4740ed0db5d52deff5009163a1)(typescript@6.0.2))(valibot@1.4.2(typescript@6.0.2))
       '@tmcp/transport-stdio':
         specifier: ^0.4.3
-        version: 0.4.3(patch_hash=fed5c51fe47d7febaa2ae1433feabd3668c0009789e8d53627e60273038857a0)(tmcp@1.19.4(patch_hash=cacb5fe5995acf4f2f888ebc2ce94fb0a5b9dc4740ed0db5d52deff5009163a1)(typescript@6.0.2))
+        version: 0.4.3(patch_hash=616e49a58b11a4daa70f67e5bd97cffb36ad8dc5117a3a5c4a0ca8f8fa51347d)(tmcp@1.19.4(patch_hash=cacb5fe5995acf4f2f888ebc2ce94fb0a5b9dc4740ed0db5d52deff5009163a1)(typescript@6.0.2))
       mcp-proxy:
         specifier: 6.7.3
         version: 6.7.3(patch_hash=c5c76bd9429a83f335291a97f1fb78ed20465f28dfcb872d0e0418da55b44f5e)
@@ -2551,7 +2551,7 @@ snapshots:
       tmcp: 1.19.4(patch_hash=cacb5fe5995acf4f2f888ebc2ce94fb0a5b9dc4740ed0db5d52deff5009163a1)(typescript@6.0.2)
       valibot: 1.4.2(typescript@6.0.2)
 
-  '@tmcp/transport-stdio@0.4.3(patch_hash=fed5c51fe47d7febaa2ae1433feabd3668c0009789e8d53627e60273038857a0)(tmcp@1.19.4(patch_hash=cacb5fe5995acf4f2f888ebc2ce94fb0a5b9dc4740ed0db5d52deff5009163a1)(typescript@6.0.2))':
+  '@tmcp/transport-stdio@0.4.3(patch_hash=616e49a58b11a4daa70f67e5bd97cffb36ad8dc5117a3a5c4a0ca8f8fa51347d)(tmcp@1.19.4(patch_hash=cacb5fe5995acf4f2f888ebc2ce94fb0a5b9dc4740ed0db5d52deff5009163a1)(typescript@6.0.2))':
     dependencies:
       tmcp: 1.19.4(patch_hash=cacb5fe5995acf4f2f888ebc2ce94fb0a5b9dc4740ed0db5d52deff5009163a1)(typescript@6.0.2)
 

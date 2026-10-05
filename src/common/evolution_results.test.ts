@@ -22,8 +22,8 @@ const payload_bytes = (result: unknown) =>
 	);
 
 beforeEach(() => {
-	directory = mkdtempSync(join(tmpdir(), 'omnisearch-p0-results-'));
-	vi.stubEnv('OMNISEARCH_RESULT_DIR', directory);
+	directory = mkdtempSync(join(tmpdir(), 'retriever-p0-results-'));
+	vi.stubEnv('RETRIEVER_RESULT_DIR', directory);
 });
 afterEach(() => {
 	vi.unstubAllEnvs();
@@ -66,8 +66,8 @@ describe('P0 legacy evidence boundary', () => {
 	});
 
 	it('fails explicitly instead of issuing a handle when storage cannot retain canonical evidence', () => {
-		vi.stubEnv('OMNISEARCH_RESULT_MAX_BYTES', '1');
-		vi.stubEnv('OMNISEARCH_RESULT_STORE_MAX_BYTES', '1');
+		vi.stubEnv('RETRIEVER_RESULT_MAX_BYTES', '1');
+		vi.stubEnv('RETRIEVER_RESULT_STORE_MAX_BYTES', '1');
 		expect(() =>
 			handle_large_result({ content: 'x'.repeat(90000) }, 'fixture'),
 		).toThrow();

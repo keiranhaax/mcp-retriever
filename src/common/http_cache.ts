@@ -2,8 +2,8 @@ import { createHash } from 'node:crypto';
 
 /**
  * Optional in-memory cache for idempotent provider responses. Off unless
- * OMNISEARCH_HTTP_CACHE_BYTES is set; identical requests within
- * OMNISEARCH_HTTP_CACHE_TTL_MS then reuse the stored body instead of
+ * RETRIEVER_HTTP_CACHE_BYTES is set; identical requests within
+ * RETRIEVER_HTTP_CACHE_TTL_MS then reuse the stored body instead of
  * spending another paid call. Only callers that opt in per request are
  * cached, never job creation, status or cancel calls. Keys never include
  * credential headers, and the cache lives only in this process.
@@ -27,12 +27,12 @@ const bounded = (
 
 export const cache_settings = () => ({
 	bytes: bounded(
-		process.env.OMNISEARCH_HTTP_CACHE_BYTES,
+		process.env.RETRIEVER_HTTP_CACHE_BYTES,
 		0,
 		MAX_CACHE_BYTES,
 	),
 	ttl_ms: bounded(
-		process.env.OMNISEARCH_HTTP_CACHE_TTL_MS,
+		process.env.RETRIEVER_HTTP_CACHE_TTL_MS,
 		DEFAULT_TTL_MS,
 		MAX_TTL_MS,
 	),

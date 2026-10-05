@@ -1,4 +1,4 @@
-// Common type definitions for the MCP Omnisearch server
+// Common type definitions for the MCP Retriever server
 
 export interface SearchResult {
 	title: string;

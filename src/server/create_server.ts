@@ -19,7 +19,8 @@ export const create_server = (identity: {
 	const server = new McpServer<GenericSchema>(
 		{
 			...identity,
-			description: 'MCP server for integrating Omnisearch with LLMs',
+			description:
+				'MCP server for multi-provider web search and content retrieval',
 		},
 		{
 			adapter: new ValibotJsonSchemaAdapter(),

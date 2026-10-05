@@ -1,10 +1,10 @@
 {
 	"$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
-	"name": "io.github.spences10/mcp-omnisearch",
-	"description": "MCP server for integrating Omnisearch with LLMs",
+	"name": "io.github.keiranhaax/mcp-retriever",
+	"description": "MCP server for multi-provider web search and content retrieval",
 	"status": "active",
 	"repository": {
-		"url": "https://github.com/spences10/mcp-omnisearch",
+		"url": "https://github.com/keiranhaax/mcp-retriever",
 		"source": "github"
 	},
 	"version": "0.0.24",
@@ -12,7 +12,7 @@
 		{
 			"registry_type": "npm",
 			"registry_base_url": "https://registry.npmjs.org",
-			"identifier": "mcp-omnisearch",
+			"identifier": "mcp-retriever",
 			"version": "0.0.24",
 			"transport": {
 				"type": "stdio"

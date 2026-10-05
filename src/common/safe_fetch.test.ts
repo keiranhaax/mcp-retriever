@@ -73,9 +73,7 @@ let key: Buffer;
 let certificate_dir: string;
 
 beforeAll(() => {
-	certificate_dir = mkdtempSync(
-		join(tmpdir(), 'omnisearch-p3a-tls-'),
-	);
+	certificate_dir = mkdtempSync(join(tmpdir(), 'retriever-p3a-tls-'));
 	// Synthetic, ephemeral fixture key, never a production credential.
 	execFileSync(
 		'openssl',

@@ -35,7 +35,7 @@ const fetch_mock = vi.fn(() => {
 });
 beforeEach(() => {
 	for (const item of settings) item.api_key = 'group-fixture-key';
-	vi.stubEnv('OMNISEARCH_TOOL_GROUPS', undefined);
+	vi.stubEnv('RETRIEVER_TOOL_GROUPS', undefined);
 	vi.stubGlobal('fetch', fetch_mock);
 	fetch_mock.mockClear();
 	vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -63,8 +63,8 @@ it.each([
 ])(
 	'rejects invalid group configuration without echoing its value: %j',
 	async (value) => {
-		vi.stubEnv('OMNISEARCH_TOOL_GROUPS', value);
-		expect(make).toThrow('Invalid OMNISEARCH_TOOL_GROUPS');
+		vi.stubEnv('RETRIEVER_TOOL_GROUPS', value);
+		expect(make).toThrow('Invalid RETRIEVER_TOOL_GROUPS');
 		if (value === 'unknown') expect(make).not.toThrow(value);
 	},
 );
@@ -84,7 +84,7 @@ it('requires an explicit capability classification for every registered tool', a
 
 it('none leaves only retained-result retrieval and rejects every provider call', async () => {
 	const all = await discover(make());
-	vi.stubEnv('OMNISEARCH_TOOL_GROUPS', 'none');
+	vi.stubEnv('RETRIEVER_TOOL_GROUPS', 'none');
 	const restricted = make();
 	expect(await discover(restricted)).toEqual(['result_read']);
 	for (const name of all.filter((name) => name !== 'result_read'))
@@ -92,14 +92,14 @@ it('none leaves only retained-result retrieval and rejects every provider call',
 });
 
 it('routes focused tools into research and automation without mixed legacy entry points', async () => {
-	vi.stubEnv('OMNISEARCH_TOOL_GROUPS', 'research');
+	vi.stubEnv('RETRIEVER_TOOL_GROUPS', 'research');
 	const research = make();
 	expect(await discover(research)).toContain('web_read');
 	for (const name of ['web_crawl', 'web_map']) {
 		expect(await discover(research)).not.toContain(name);
 		expect((await call(research, name)).error?.code).toBe(-32602);
 	}
-	vi.stubEnv('OMNISEARCH_TOOL_GROUPS', 'automation');
+	vi.stubEnv('RETRIEVER_TOOL_GROUPS', 'automation');
 	const automation = make();
 	expect(await discover(automation)).toEqual([
 		'firecrawl_agent',
@@ -118,25 +118,25 @@ it('routes focused tools into research and automation without mixed legacy entry
 it('explicit all matches unset and group selections are fixed for each server instance', async () => {
 	const original = make();
 	const all = await discover(original);
-	vi.stubEnv('OMNISEARCH_TOOL_GROUPS', 'all');
+	vi.stubEnv('RETRIEVER_TOOL_GROUPS', 'all');
 	expect(await discover(make())).toEqual(all);
-	vi.stubEnv('OMNISEARCH_TOOL_GROUPS', 'none');
+	vi.stubEnv('RETRIEVER_TOOL_GROUPS', 'none');
 	const empty = make();
 	expect(await discover(original)).toEqual(all);
-	vi.stubEnv('OMNISEARCH_TOOL_GROUPS', 'all');
+	vi.stubEnv('RETRIEVER_TOOL_GROUPS', 'all');
 	expect(await discover(empty)).toEqual(['result_read']);
 	expect((await call(empty, 'web_search')).error?.code).toBe(-32602);
 });
 
 it('mixed groups require all declared capabilities rather than any overlap', async () => {
 	vi.stubEnv(
-		'OMNISEARCH_TOOL_GROUPS',
+		'RETRIEVER_TOOL_GROUPS',
 		' research, automation,research ',
 	);
 	const names = await discover(make());
 	expect(names).not.toContain('web_extract');
 	expect(names).not.toContain('context_web_extract');
-	vi.stubEnv('OMNISEARCH_TOOL_GROUPS', 'research,automation,media');
+	vi.stubEnv('RETRIEVER_TOOL_GROUPS', 'research,automation,media');
 	const mixed = await discover(make());
 	expect(mixed).toContain('context_web_extract');
 	expect(mixed).toContain('web_extract');
@@ -157,7 +157,7 @@ it.each([
 ])(
 	'$group only exposes its explicit operations',
 	async ({ group, allowed }) => {
-		vi.stubEnv('OMNISEARCH_TOOL_GROUPS', group);
+		vi.stubEnv('RETRIEVER_TOOL_GROUPS', group);
 		expect(await discover(make())).toEqual(allowed.sort());
 	},
 );
@@ -169,7 +169,7 @@ it('cold startup without provider credentials cannot enable tools through a grou
 		Object.values,
 	))
 		item.api_key = undefined;
-	vi.stubEnv('OMNISEARCH_TOOL_GROUPS', 'research');
+	vi.stubEnv('RETRIEVER_TOOL_GROUPS', 'research');
 	const fresh_create = (await import('./create_server.js'))
 		.create_server;
 	expect(
@@ -180,7 +180,7 @@ it('cold startup without provider credentials cannot enable tools through a grou
 });
 
 it('research-only omits mixed-purpose and other groups from discovery and direct calls', async () => {
-	vi.stubEnv('OMNISEARCH_TOOL_GROUPS', 'research');
+	vi.stubEnv('RETRIEVER_TOOL_GROUPS', 'research');
 	const server = make();
 	const names = await discover(server);
 	expect(names).toContain('web_search');

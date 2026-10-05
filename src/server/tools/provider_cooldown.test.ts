@@ -45,7 +45,7 @@ const read_status = async () =>
 					jsonrpc: '2.0',
 					id: ++sequence,
 					method: 'resources/read',
-					params: { uri: 'omnisearch://providers/status' },
+					params: { uri: 'retriever://providers/status' },
 				},
 				{} as any,
 			)
@@ -68,9 +68,9 @@ const search = (provider = 'tavily') =>
 	call('web_search', { query: 'needle', provider });
 
 beforeEach(() => {
-	directory = mkdtempSync(join(tmpdir(), 'omnisearch-cooldown-'));
-	vi.stubEnv('OMNISEARCH_RESULT_DIR', directory);
-	vi.stubEnv('OMNISEARCH_HTTP_CACHE_BYTES', '0');
+	directory = mkdtempSync(join(tmpdir(), 'retriever-cooldown-'));
+	vi.stubEnv('RETRIEVER_RESULT_DIR', directory);
+	vi.stubEnv('RETRIEVER_HTTP_CACHE_BYTES', '0');
 	for (const item of settings) item.api_key = undefined;
 	config.search.tavily.api_key = 'cooldown-fixture-key';
 	config.search.exa.api_key = 'cooldown-fixture-key';
@@ -225,7 +225,7 @@ it('cools down after a 5xx but not after a 401', async () => {
 });
 
 it('follows the environment default and is disabled by zero', async () => {
-	vi.stubEnv('OMNISEARCH_PROVIDER_COOLDOWN_MS', '5000');
+	vi.stubEnv('RETRIEVER_PROVIDER_COOLDOWN_MS', '5000');
 	fetch_mock.mockImplementation(async () => failing(502));
 	await search();
 	expect_refusal(await search(), 'tavily', at(5), 502);
@@ -233,7 +233,7 @@ it('follows the environment default and is disabled by zero', async () => {
 	fetch_mock.mockImplementation(async () => search_ok());
 	expect((await search()).result.isError).not.toBe(true);
 
-	vi.stubEnv('OMNISEARCH_PROVIDER_COOLDOWN_MS', '0');
+	vi.stubEnv('RETRIEVER_PROVIDER_COOLDOWN_MS', '0');
 	reset_provider_cooldowns();
 	fetch_mock.mockImplementation(async () => failing(429, '120'));
 	await search();
@@ -250,12 +250,12 @@ it('keeps job status and cancel available while a start is refused', async () =>
 	fetch_mock.mockImplementation(async () => failing(429, '120'));
 	const start = await call('firecrawl_agent', { prompt: 'gather' });
 	expect(start.result.isError).toBe(true);
-	expect(start.result._meta.omnisearch.error.kind).toBe('rate_limit');
+	expect(start.result._meta.retriever.error.kind).toBe('rate_limit');
 	const attempts = fetch_mock.mock.calls.length;
 
 	const refused = await call('firecrawl_agent', { prompt: 'gather' });
 	expect(refused.result.isError).toBe(true);
-	expect(refused.result._meta.omnisearch.error).toMatchObject({
+	expect(refused.result._meta.retriever.error).toMatchObject({
 		kind: 'provider_cooldown',
 		provider: 'firecrawl_agent',
 		retry_at: at(120),
@@ -295,12 +295,12 @@ it('keeps job status and cancel available while a start is refused', async () =>
 		query: 'q',
 		provider: 'tavily_research',
 	});
-	expect(
-		research_refused.result._meta.omnisearch.error,
-	).toMatchObject({
-		kind: 'provider_cooldown',
-		trigger_status: 503,
-	});
+	expect(research_refused.result._meta.retriever.error).toMatchObject(
+		{
+			kind: 'provider_cooldown',
+			trigger_status: 503,
+		},
+	);
 	fetch_mock.mockImplementation(
 		async () =>
 			new Response(

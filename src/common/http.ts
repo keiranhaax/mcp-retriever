@@ -23,7 +23,7 @@ export interface HttpJsonOptions extends RequestInit {
 	max_response_bytes?: number;
 	/**
 	 * Allow an identical successful response to be served from the
-	 * in-process cache when OMNISEARCH_HTTP_CACHE_BYTES enables it. Only
+	 * in-process cache when RETRIEVER_HTTP_CACHE_BYTES enables it. Only
 	 * idempotent lookups opt in; job creation and status never do.
 	 */
 	cacheable?: boolean;

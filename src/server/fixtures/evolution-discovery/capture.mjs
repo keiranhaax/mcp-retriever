@@ -127,11 +127,11 @@ syncBuiltinESMExports();
 `;
 
 for (const profile of profiles) {
-	const home = await mkdtemp(join(tmpdir(), 'omnisearch-p0-schema-'));
+	const home = await mkdtemp(join(tmpdir(), 'retriever-p0-schema-'));
 	const env = {
 		PATH: process.env.PATH,
 		HOME: home,
-		OMNISEARCH_RESULT_DIR: join(home, 'results'),
+		RETRIEVER_RESULT_DIR: join(home, 'results'),
 		NODE_OPTIONS: `--import=data:text/javascript,${encodeURIComponent(deny_network)}`,
 	};
 	for (const key of profile.enabled)

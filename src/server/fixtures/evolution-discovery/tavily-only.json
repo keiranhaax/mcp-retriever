@@ -9,7 +9,7 @@
 				"result_id": {
 					"type": "string",
 					"pattern": "^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[1-5][0-9A-Fa-f]{3}-[89aAbB][0-9A-Fa-f]{3}-[0-9A-Fa-f]{12}$",
-					"description": "Opaque result ID returned by an Omnisearch tool"
+					"description": "Opaque result ID returned by an Retriever tool"
 				},
 				"offset": {
 					"type": "integer",

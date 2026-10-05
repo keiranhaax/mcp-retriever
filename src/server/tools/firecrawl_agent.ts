@@ -164,7 +164,7 @@ export const register_firecrawl_agent = (
 				});
 				return {
 					_meta: {
-						omnisearch: {
+						retriever: {
 							...metadata,
 							local_completeness: presented.local_completeness,
 						},
@@ -197,7 +197,7 @@ export const register_firecrawl_agent = (
 				);
 				return {
 					_meta: {
-						omnisearch: {
+						retriever: {
 							...metadata,
 							local_completeness: error_response.local_completeness,
 						},

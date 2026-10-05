@@ -41,7 +41,7 @@ describe('provider_json_request', () => {
 	});
 
 	it('marks a mapped result as cached and drops its replayed usage', async () => {
-		vi.stubEnv('OMNISEARCH_HTTP_CACHE_BYTES', '1048576');
+		vi.stubEnv('RETRIEVER_HTTP_CACHE_BYTES', '1048576');
 		reset_http_cache();
 		fetch_mock.mockImplementation(async () =>
 			Response.json({ value: 1, usage: { credits: 3 } }),

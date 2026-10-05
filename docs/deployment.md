@@ -8,6 +8,14 @@ ownership, and endpoints separately before a cutover. See
 and [the transport ADR](architecture-decision-mcp-2026-07-28.md) for
 historical architecture evidence.
 
+The project was renamed from `mcp-omnisearch` to `mcp-retriever` in
+October 2026: PM2 process `mcp-retriever` in `/opt/mcp-retriever`,
+`RETRIEVER_*` environment variables, `retriever://` resources,
+`_meta.retriever`, and the public `/retriever/` route. The launcher
+refuses to start while any legacy `OMNISEARCH_*` variable is set.
+Historical sections and linked evidence records keep the names in use
+when they were written.
+
 The selected deployment is native Node/PM2. Docker is outside this
 path unless separately requested; historical Docker verification gaps
 are not native-deployment blockers.
@@ -84,9 +92,9 @@ stdio server, and signals propagate down the chain.
 ## Ingress paths
 
 - Direct Tailscale: `http://100.84.79.102:8000/mcp`
-- Public: `https://mcp.keiranh.cloud/omnisearch/mcp` (Caddy
-  `handle_path /omnisearch/*`, 4 MB `request_body`, Bearer
-  translation, `flush_interval -1` for SSE)
+- Public: `https://mcp.keiranh.cloud/retriever/mcp` (Caddy
+  `handle_path /retriever/*`, 4 MB `request_body`, Bearer translation,
+  `flush_interval -1` for SSE)
 
 ## Configuration
 
@@ -167,7 +175,7 @@ Read-only production health probes (not deployment authorization):
 
 ```bash
 curl --max-time 10 -fsS http://100.84.79.102:8000/ping
-curl --max-time 10 -fsS https://mcp.keiranh.cloud/omnisearch/ping
+curl --max-time 10 -fsS https://mcp.keiranh.cloud/retriever/ping
 ```
 
 Before and after isolated checks, compare the exact PM2 process PID,

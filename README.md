@@ -1,4 +1,4 @@
-# mcp-omnisearch
+# mcp-retriever
 
 [![built with vite+](https://img.shields.io/badge/built%20with-Vite+-646CFF?logo=vite&logoColor=white)](https://viteplus.dev)
 [![tested with vitest](https://img.shields.io/badge/tested%20with-Vitest-6E9F18?logo=vitest&logoColor=white)](https://vitest.dev)
@@ -8,7 +8,11 @@
 > It preserves the original project's unified search foundation while
 > maintaining a different provider catalog, expanded tool surface,
 > hardened remote transport, and production-oriented result handling.
-> Kagi is not included; You.com is available as a search fallback.
+> Kagi is not included; You.com is available as a search fallback. It
+> was renamed from `mcp-omnisearch` in October 2026: environment
+> variables use the `RETRIEVER_` prefix, resources use `retriever://`,
+> and result metadata uses `_meta.retriever`. Dated records under
+> `docs/` keep the names in use when they were written.
 
 A Model Context Protocol (MCP) server that gives agents one interface
 for web search, cited research, GitHub discovery, content extraction,
@@ -163,7 +167,7 @@ Off by default.
 
 ### Optional capability groups
 
-`OMNISEARCH_TOOL_GROUPS` selects process-wide startup groups:
+`RETRIEVER_TOOL_GROUPS` selects process-wide startup groups:
 `research`, `media`, `business`, and `automation`. Unset/`all`
 preserves the full configured catalog; `none` leaves only
 `result_read`. Excluded tools cannot be discovered or called.
@@ -321,11 +325,10 @@ validation and remaining release gates.
 ### Research metadata and recovery
 
 `ai_search` and `firecrawl_agent` handlers add request-level
-`_meta.omnisearch`: provider, operation, measured elapsed
-milliseconds, reported usage or explicit unknown usage, local
-completeness, and typed job/error metadata where applicable. Schema
-and protocol errors that reject before dispatch retain their existing
-response format.
+`_meta.retriever`: provider, operation, measured elapsed milliseconds,
+reported usage or explicit unknown usage, local completeness, and
+typed job/error metadata where applicable. Schema and protocol errors
+that reject before dispatch retain their existing response format.
 
 Job states are `queued`, `running`, `completed`, `failed`,
 `cancelled`, or `unknown`. `partial` identifies observed unfinished
@@ -370,9 +373,9 @@ Build the project, then configure any stdio-capable MCP client:
 ```json
 {
 	"mcpServers": {
-		"mcp-omnisearch": {
+		"mcp-retriever": {
 			"command": "node",
-			"args": ["/path/to/mcp-omnisearch/dist/index.js"],
+			"args": ["/path/to/mcp-retriever/dist/index.js"],
 			"env": {
 				"TAVILY_API_KEY": "your-tavily-key",
 				"BRAVE_API_KEY": "your-brave-key",
@@ -393,26 +396,26 @@ source control.
 
 ### Environment variables
 
-| Variable                            | Capability                                                      |
-| ----------------------------------- | --------------------------------------------------------------- |
-| `TAVILY_API_KEY`                    | Tavily search, extraction, and research                         |
-| `BRAVE_API_KEY`                     | Brave web, news, media, LLM context, and Answers fallback       |
-| `BRAVE_ANSWERS_API_KEY`             | Optional separate Brave Answers credential                      |
-| `GITHUB_API_KEY`                    | GitHub code, repository, and user search                        |
-| `EXA_API_KEY`                       | Exa search, answers, deep research, contents, and similar pages |
-| `YOU_API_KEY`                       | You.com web search fallback                                     |
-| `LINKUP_API_KEY`                    | Linkup sourced answers                                          |
-| `FIRECRAWL_API_KEY`                 | Firecrawl processing, search, and agent tools                   |
-| `FIRECRAWL_BASE_URL`                | Optional self-hosted Firecrawl base URL                         |
-| `FIRECRAWL_AGENT_URL`               | Optional Firecrawl Agent endpoint override                      |
-| `CONTEXT_DEV_API_KEY`               | Context.dev web and business-intelligence tools                 |
-| `SEARXNG_URL`                       | Optional self-hosted SearXNG search; off when unset             |
-| `OMNISEARCH_RESULT_DIR`             | Private result-store directory                                  |
-| `OMNISEARCH_RESULT_TTL_MS`          | Result retention, default 24 hours and maximum 7 days           |
-| `OMNISEARCH_RESULT_MAX_BYTES`       | Per-result limit, default 25 MiB                                |
-| `OMNISEARCH_RESULT_STORE_MAX_BYTES` | Total quota, default 256 MiB with oldest-first eviction         |
-| `OMNISEARCH_SPEND_CAPS`             | Optional per-account spending caps; see below                   |
-| `OMNISEARCH_PROVIDER_COOLDOWN_MS`   | Default provider cooldown, 60000; `0` disables; see below       |
+| Variable                           | Capability                                                      |
+| ---------------------------------- | --------------------------------------------------------------- |
+| `TAVILY_API_KEY`                   | Tavily search, extraction, and research                         |
+| `BRAVE_API_KEY`                    | Brave web, news, media, LLM context, and Answers fallback       |
+| `BRAVE_ANSWERS_API_KEY`            | Optional separate Brave Answers credential                      |
+| `GITHUB_API_KEY`                   | GitHub code, repository, and user search                        |
+| `EXA_API_KEY`                      | Exa search, answers, deep research, contents, and similar pages |
+| `YOU_API_KEY`                      | You.com web search fallback                                     |
+| `LINKUP_API_KEY`                   | Linkup sourced answers                                          |
+| `FIRECRAWL_API_KEY`                | Firecrawl processing, search, and agent tools                   |
+| `FIRECRAWL_BASE_URL`               | Optional self-hosted Firecrawl base URL                         |
+| `FIRECRAWL_AGENT_URL`              | Optional Firecrawl Agent endpoint override                      |
+| `CONTEXT_DEV_API_KEY`              | Context.dev web and business-intelligence tools                 |
+| `SEARXNG_URL`                      | Optional self-hosted SearXNG search; off when unset             |
+| `RETRIEVER_RESULT_DIR`             | Private result-store directory                                  |
+| `RETRIEVER_RESULT_TTL_MS`          | Result retention, default 24 hours and maximum 7 days           |
+| `RETRIEVER_RESULT_MAX_BYTES`       | Per-result limit, default 25 MiB                                |
+| `RETRIEVER_RESULT_STORE_MAX_BYTES` | Total quota, default 256 MiB with oldest-first eviction         |
+| `RETRIEVER_SPEND_CAPS`             | Optional per-account spending caps; see below                   |
+| `RETRIEVER_PROVIDER_COOLDOWN_MS`   | Default provider cooldown, 60000; `0` disables; see below       |
 
 The result directory is created with mode `0700`; stored results use
 mode `0600`. `result_read` returns at most 500 lines and 12,000 UTF-8
@@ -428,7 +431,7 @@ JSON view is stored; optional readable copies are omitted.
 
 ### Spending caps
 
-`OMNISEARCH_SPEND_CAPS` is off by default. Set it to a comma-separated
+`RETRIEVER_SPEND_CAPS` is off by default. Set it to a comma-separated
 list of `account:daily|monthly:usd|credits=amount` entries, for
 example
 `exa:daily:usd=1.50,exa:monthly:usd=20,tavily:monthly:credits=1000`.
@@ -448,7 +451,7 @@ usage can only be stopped with a cap of `0`. Running totals persist in
 writes). When a cap is reached, every tool that would start paid work
 on that account returns a `spend_cap` error naming the account, cap
 and `reset_at`; nothing is rerouted, and job status or cancel actions
-stay available. The `omnisearch://providers/status` resource reports
+stay available. The `retriever://providers/status` resource reports
 `spend_caps` with current totals, caps and reset times per account.
 
 ### Provider cooldown
@@ -457,14 +460,14 @@ When a provider call ends, after its retries, in a rate limit (HTTP
 429, or a provider's own rate-limit signal) or a 5xx, that provider
 enters a short in-memory cooldown. The window is the provider's
 `Retry-After` when present, clamped to 15 minutes, otherwise
-`OMNISEARCH_PROVIDER_COOLDOWN_MS` (default 60000; `0` disables the
+`RETRIEVER_PROVIDER_COOLDOWN_MS` (default 60000; `0` disables the
 feature). Authentication, entitlement, validation, local timeouts and
 policy refusals never start one. While cooling, tools that would start
 new work for that provider return a `provider_cooldown` error with
 `retry_at` and the triggering `trigger_status`; nothing is rerouted,
 and job status or cancel actions stay available. In `search_and_read`
 a cooling extract provider is one failed source. The
-`omnisearch://providers/status` resource shows `cooldown_until` per
+`retriever://providers/status` resource shows `cooldown_until` per
 provider while a window is active. The unit is the same category and
 provider pair that provider health tracks, so Tavily extraction and
 Tavily search cool down independently. A restart clears every
@@ -544,7 +547,7 @@ node scripts/eval-search.mjs --live --providers tavily,exa \
 
 Live mode calls `web_search` on `dist/index.js` through MCP, so
 spending caps, cooldowns, metrics and request budgets apply exactly as
-in production; `OMNISEARCH_SPEND_CAPS` from the environment or the
+in production; `RETRIEVER_SPEND_CAPS` from the environment or the
 credentials file is passed through. It stops as soon as the reported
 spend reaches either budget (ceilings 5 USD and 500 credits per run),
 bounds raw requests with the same guard as `scripts/verify-live.mjs`,
@@ -598,15 +601,15 @@ The Docker image uses MCPO to expose the stdio server as HTTP/OpenAPI
 for clients such as OpenWebUI:
 
 ```bash
-git clone https://github.com/keiranhaax/mcp-omnisearch.git
-cd mcp-omnisearch
+git clone https://github.com/keiranhaax/mcp-retriever.git
+cd mcp-retriever
 cp .env.example .env 2>/dev/null || touch .env
 # Set a non-blank MCP_API_KEY and only the provider keys you need
 docker compose up -d --build
 ```
 
 The default container port is `8000`, and the generated MCPO route is
-`/omnisearch`. This Docker/MCPO path is separate from the hardened
+`/retriever`. This Docker/MCPO path is separate from the hardened
 native `/mcp` deployment described above. Compose injects `.env`,
 requires `MCP_API_KEY`, and publishes only on `127.0.0.1` by default.
 MCPO requires the configured key in its Bearer authentication header,

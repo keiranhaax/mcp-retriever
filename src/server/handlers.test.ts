@@ -95,7 +95,7 @@ describe('setup_handlers', () => {
 		expect(templates.result.resourceTemplates).toEqual([
 			expect.objectContaining({
 				name: 'provider-info',
-				uriTemplate: 'omnisearch://search/{provider}/info',
+				uriTemplate: 'retriever://search/{provider}/info',
 			}),
 		]);
 		const resources = await request('resources/list');
@@ -105,7 +105,7 @@ describe('setup_handlers', () => {
 			),
 		).toEqual(['provider-status']);
 		const read = await request('resources/read', {
-			uri: 'omnisearch://search/fixture/info',
+			uri: 'retriever://search/fixture/info',
 		});
 		expect(read.error).toBeUndefined();
 		expect(JSON.parse(read.result.contents[0].text)).toMatchObject({
@@ -113,7 +113,7 @@ describe('setup_handlers', () => {
 			status: 'registered',
 		});
 		const missing = await request('resources/read', {
-			uri: 'omnisearch://search/missing/info',
+			uri: 'retriever://search/missing/info',
 		});
 		expect(missing.error).toBeDefined();
 	});
@@ -203,7 +203,7 @@ describe('setup_handlers', () => {
 			(resource) => resource.definition.name === 'provider-info',
 		)!;
 		const response = await provider_info.handler(
-			'omnisearch://search/brave/info',
+			'retriever://search/brave/info',
 		);
 		const body = JSON.parse(response.contents[0].text);
 
@@ -231,7 +231,7 @@ describe('setup_handlers', () => {
 			(resource) => resource.definition.name === 'provider-info',
 		)!;
 		const response = await provider_info.handler(
-			'omnisearch://search/firecrawl/info',
+			'retriever://search/firecrawl/info',
 		);
 		const body = JSON.parse(response.contents[0].text);
 		expect(body).toMatchObject({
@@ -252,15 +252,15 @@ describe('setup_handlers', () => {
 		)!;
 
 		await expect(
-			provider_info.handler('omnisearch://search/missing/info'),
+			provider_info.handler('retriever://search/missing/info'),
 		).rejects.toThrow(
 			'Provider not available: missing (missing API key)',
 		);
 
 		await expect(
-			provider_info.handler('omnisearch://unknown/resource'),
+			provider_info.handler('retriever://unknown/resource'),
 		).rejects.toThrow(
-			'Unknown resource URI: omnisearch://unknown/resource',
+			'Unknown resource URI: retriever://unknown/resource',
 		);
 	});
 

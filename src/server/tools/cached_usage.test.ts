@@ -37,9 +37,9 @@ const call = async (name: string, args: Record<string, unknown>) =>
 	)) as any;
 
 beforeEach(() => {
-	directory = mkdtempSync(join(tmpdir(), 'omnisearch-cached-usage-'));
-	vi.stubEnv('OMNISEARCH_RESULT_DIR', directory);
-	vi.stubEnv('OMNISEARCH_HTTP_CACHE_BYTES', '1048576');
+	directory = mkdtempSync(join(tmpdir(), 'retriever-cached-usage-'));
+	vi.stubEnv('RETRIEVER_RESULT_DIR', directory);
+	vi.stubEnv('RETRIEVER_HTTP_CACHE_BYTES', '1048576');
 	for (const item of settings) item.api_key = undefined;
 	config.search.exa.api_key = 'cached-usage-fixture-key';
 	config.search.tavily.api_key = 'cached-usage-fixture-key';
@@ -168,9 +168,9 @@ const exa_body = (usd: number) => ({
 });
 
 it('refuses a provider whose family cap is reached, without rerouting', async () => {
-	vi.stubEnv('OMNISEARCH_HTTP_CACHE_BYTES', '0');
+	vi.stubEnv('RETRIEVER_HTTP_CACHE_BYTES', '0');
 	vi.stubEnv(
-		'OMNISEARCH_SPEND_CAPS',
+		'RETRIEVER_SPEND_CAPS',
 		'exa:daily:usd=0.01,tavily:daily:credits=100',
 	);
 	config.ai_response.exa_answer.api_key = 'cached-usage-fixture-key';
@@ -219,7 +219,7 @@ it('refuses a provider whose family cap is reached, without rerouting', async ()
 		provider: 'exa_answer',
 	});
 	expect(answer.result.isError).toBe(true);
-	expect(answer.result._meta.omnisearch.error).toMatchObject({
+	expect(answer.result._meta.retriever.error).toMatchObject({
 		kind: 'spend_cap',
 		provider: 'exa_answer',
 	});
@@ -247,7 +247,7 @@ it('refuses a provider whose family cap is reached, without rerouting', async ()
 	config.processing.firecrawl_agent.api_key =
 		'cached-usage-fixture-key';
 	vi.stubEnv(
-		'OMNISEARCH_SPEND_CAPS',
+		'RETRIEVER_SPEND_CAPS',
 		'exa:daily:usd=0.01,tavily:daily:credits=0,firecrawl:daily:credits=0',
 	);
 	server = create_server({
@@ -258,12 +258,12 @@ it('refuses a provider whose family cap is reached, without rerouting', async ()
 		query: 'c',
 		provider: 'tavily_research',
 	});
-	expect(research.result._meta.omnisearch.error).toMatchObject({
+	expect(research.result._meta.retriever.error).toMatchObject({
 		kind: 'spend_cap',
 		provider: 'tavily_research',
 	});
 	const agent = await call('firecrawl_agent', { prompt: 'c' });
-	expect(agent.result._meta.omnisearch.error).toMatchObject({
+	expect(agent.result._meta.retriever.error).toMatchObject({
 		kind: 'spend_cap',
 		provider: 'firecrawl_agent',
 	});
@@ -283,7 +283,7 @@ it('refuses a provider whose family cap is reached, without rerouting', async ()
 	expect(agent_status.result.isError).not.toBe(true);
 	expect(fetch_mock).toHaveBeenCalledTimes(3);
 	vi.stubEnv(
-		'OMNISEARCH_SPEND_CAPS',
+		'RETRIEVER_SPEND_CAPS',
 		'exa:daily:usd=0.01,tavily:daily:credits=100',
 	);
 	fetch_mock.mockImplementation(async () =>
@@ -309,7 +309,7 @@ it('refuses a provider whose family cap is reached, without rerouting', async ()
 		provider: 'tavily',
 	});
 	expect(tavily.result.isError).not.toBe(true);
-	const status = await read_resource('omnisearch://providers/status');
+	const status = await read_resource('retriever://providers/status');
 	expect(status.spend_caps).toMatchObject({
 		enabled: true,
 		accounts: {
@@ -329,8 +329,8 @@ it('refuses a provider whose family cap is reached, without rerouting', async ()
 });
 
 it('refuses search_and_read providers per step with the typed source error', async () => {
-	vi.stubEnv('OMNISEARCH_HTTP_CACHE_BYTES', '0');
-	vi.stubEnv('OMNISEARCH_SPEND_CAPS', 'exa:daily:usd=0');
+	vi.stubEnv('RETRIEVER_HTTP_CACHE_BYTES', '0');
+	vi.stubEnv('RETRIEVER_SPEND_CAPS', 'exa:daily:usd=0');
 	config.processing.exa_contents.api_key = 'cached-usage-fixture-key';
 	config.processing.tavily_extract.api_key =
 		'cached-usage-fixture-key';
@@ -395,8 +395,8 @@ it('refuses search_and_read providers per step with the typed source error', asy
 });
 
 it('fails startup on a malformed cap instead of running without it', () => {
-	vi.stubEnv('OMNISEARCH_SPEND_CAPS', 'exa:daily:usd=lots');
+	vi.stubEnv('RETRIEVER_SPEND_CAPS', 'exa:daily:usd=lots');
 	expect(() =>
 		create_server({ name: 'cached-usage-offline', version: '1' }),
-	).toThrow('Invalid OMNISEARCH_SPEND_CAPS amount "lots" for exa');
+	).toThrow('Invalid RETRIEVER_SPEND_CAPS amount "lots" for exa');
 });

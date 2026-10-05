@@ -52,8 +52,8 @@ const respond = (text: string) => {
 	});
 };
 beforeEach(() => {
-	directory = mkdtempSync(join(tmpdir(), 'omnisearch-p1b-tools-'));
-	vi.stubEnv('OMNISEARCH_RESULT_DIR', directory);
+	directory = mkdtempSync(join(tmpdir(), 'retriever-p1b-tools-'));
+	vi.stubEnv('RETRIEVER_RESULT_DIR', directory);
 	for (const item of settings) item.api_key = undefined;
 	config.search.tavily.api_key = 'p1b-fixture-key';
 	config.processing.tavily_extract.api_key = 'p1b-fixture-key';
@@ -226,8 +226,8 @@ it.each([
 );
 
 it('reports bounded retention failure without returning a false handle', async () => {
-	vi.stubEnv('OMNISEARCH_RESULT_MAX_BYTES', '1');
-	vi.stubEnv('OMNISEARCH_RESULT_STORE_MAX_BYTES', '1');
+	vi.stubEnv('RETRIEVER_RESULT_MAX_BYTES', '1');
+	vi.stubEnv('RETRIEVER_RESULT_STORE_MAX_BYTES', '1');
 	respond('Private canonical evidence.\n'.repeat(1000));
 	const response = await call('web_extract', {
 		provider: 'tavily',

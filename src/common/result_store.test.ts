@@ -26,18 +26,18 @@ vi.mock('node:fs', async (importOriginal) => ({
 let result_dir: string;
 
 beforeEach(() => {
-	result_dir = mkdtempSync(join(tmpdir(), 'omnisearch-result-test-'));
-	process.env.OMNISEARCH_RESULT_DIR = result_dir;
-	process.env.OMNISEARCH_RESULT_TTL_MS = '86400000';
-	delete process.env.OMNISEARCH_RESULT_MAX_BYTES;
-	delete process.env.OMNISEARCH_RESULT_STORE_MAX_BYTES;
+	result_dir = mkdtempSync(join(tmpdir(), 'retriever-result-test-'));
+	process.env.RETRIEVER_RESULT_DIR = result_dir;
+	process.env.RETRIEVER_RESULT_TTL_MS = '86400000';
+	delete process.env.RETRIEVER_RESULT_MAX_BYTES;
+	delete process.env.RETRIEVER_RESULT_STORE_MAX_BYTES;
 });
 
 afterEach(() => {
-	delete process.env.OMNISEARCH_RESULT_DIR;
-	delete process.env.OMNISEARCH_RESULT_TTL_MS;
-	delete process.env.OMNISEARCH_RESULT_MAX_BYTES;
-	delete process.env.OMNISEARCH_RESULT_STORE_MAX_BYTES;
+	delete process.env.RETRIEVER_RESULT_DIR;
+	delete process.env.RETRIEVER_RESULT_TTL_MS;
+	delete process.env.RETRIEVER_RESULT_MAX_BYTES;
+	delete process.env.RETRIEVER_RESULT_STORE_MAX_BYTES;
 	rmSync(result_dir, { recursive: true, force: true });
 });
 
@@ -63,7 +63,7 @@ describe('remote result store', () => {
 		'preserves indexed random access and byte validation for %s',
 		(extension) => {
 			if (extension === 'omr')
-				process.env.OMNISEARCH_RESULT_MAX_BYTES = '50000';
+				process.env.RETRIEVER_RESULT_MAX_BYTES = '50000';
 			const lines = [
 				'header',
 				'🙂'.repeat(40000),
@@ -91,7 +91,7 @@ describe('remote result store', () => {
 	);
 
 	it('does not re-inflate compressed pages and keeps only one decoded result', () => {
-		process.env.OMNISEARCH_RESULT_MAX_BYTES = '1000';
+		process.env.RETRIEVER_RESULT_MAX_BYTES = '1000';
 		const first = store_result('🙂'.repeat(20000));
 		const second = store_result('b'.repeat(80000));
 		read_result_chunk(first.result_id);
@@ -130,7 +130,7 @@ describe('remote result store', () => {
 		'invalidates cached %s content when replaced',
 		(extension) => {
 			if (extension === 'omr')
-				process.env.OMNISEARCH_RESULT_MAX_BYTES = '100';
+				process.env.RETRIEVER_RESULT_MAX_BYTES = '100';
 			const first = store_result('a'.repeat(10000));
 			const second = store_result('b'.repeat(10000));
 			read_result_chunk(first.result_id);
@@ -186,7 +186,7 @@ describe('remote result store', () => {
 	it.each(['cleanup', 'read'])(
 		'expires compressed results through %s',
 		(mode) => {
-			process.env.OMNISEARCH_RESULT_MAX_BYTES = '100';
+			process.env.RETRIEVER_RESULT_MAX_BYTES = '100';
 			const stored = store_result('a'.repeat(10000));
 			const path = join(result_dir, `${stored.result_id}.omr`);
 			expect(statSync(path).mode & 0o777).toBe(0o600);
@@ -203,8 +203,8 @@ describe('remote result store', () => {
 	);
 
 	it('counts plain and compressed sizes together and evicts the oldest format', () => {
-		process.env.OMNISEARCH_RESULT_MAX_BYTES = '100';
-		process.env.OMNISEARCH_RESULT_STORE_MAX_BYTES = '180';
+		process.env.RETRIEVER_RESULT_MAX_BYTES = '100';
+		process.env.RETRIEVER_RESULT_STORE_MAX_BYTES = '180';
 		const compressed = store_result('a'.repeat(10000));
 		const compressed_path = join(
 			result_dir,
@@ -235,12 +235,12 @@ describe('remote result store', () => {
 	});
 
 	it('uses compression when the total quota is smaller than the per-result quota', () => {
-		process.env.OMNISEARCH_RESULT_STORE_MAX_BYTES = '100';
+		process.env.RETRIEVER_RESULT_STORE_MAX_BYTES = '100';
 		const stored = store_result('a'.repeat(10000));
 		expect(
 			statSync(join(result_dir, `${stored.result_id}.omr`)).size,
 		).toBeLessThanOrEqual(100);
-		process.env.OMNISEARCH_RESULT_STORE_MAX_BYTES = '10';
+		process.env.RETRIEVER_RESULT_STORE_MAX_BYTES = '10';
 		expect(() => store_result('a'.repeat(10000))).toThrow(
 			'total storage quota',
 		);
@@ -279,7 +279,7 @@ describe('remote result store', () => {
 		},
 	);
 	it('stores repeated logical content above the physical quota losslessly', () => {
-		process.env.OMNISEARCH_RESULT_MAX_BYTES = '10000';
+		process.env.RETRIEVER_RESULT_MAX_BYTES = '10000';
 		const text = '🙂 repeated content\n'.repeat(10000);
 		const stored = store_result(text);
 		const path = join(result_dir, `${stored.result_id}.omr`);
@@ -372,7 +372,7 @@ describe('remote result store', () => {
 	});
 
 	it('removes expired files and refuses to return expired content', () => {
-		process.env.OMNISEARCH_RESULT_TTL_MS = '1000';
+		process.env.RETRIEVER_RESULT_TTL_MS = '1000';
 		const stored = store_result('expired');
 		const path = join(result_dir, `${stored.result_id}.txt`);
 		const old = new Date(Date.now() - 5000);
@@ -386,15 +386,15 @@ describe('remote result store', () => {
 	});
 
 	it('enforces a per-result size cap', () => {
-		process.env.OMNISEARCH_RESULT_MAX_BYTES = '10';
+		process.env.RETRIEVER_RESULT_MAX_BYTES = '10';
 		expect(() => store_result('12345678901')).toThrow(
 			'Result exceeds the configured 10-byte storage limit',
 		);
 	});
 
 	it('evicts the oldest result before exceeding the total store quota', () => {
-		process.env.OMNISEARCH_RESULT_MAX_BYTES = '20';
-		process.env.OMNISEARCH_RESULT_STORE_MAX_BYTES = '20';
+		process.env.RETRIEVER_RESULT_MAX_BYTES = '20';
+		process.env.RETRIEVER_RESULT_STORE_MAX_BYTES = '20';
 		const first = store_result('123456789012');
 		const first_path = join(result_dir, `${first.result_id}.txt`);
 		const old = new Date(Date.now() - 5000);

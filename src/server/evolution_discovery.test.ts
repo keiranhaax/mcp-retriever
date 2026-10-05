@@ -246,8 +246,8 @@ beforeEach(async () => {
 			settings,
 		})),
 	);
-	home = mkdtempSync(join(tmpdir(), 'omnisearch-p0-discovery-'));
-	vi.stubEnv('OMNISEARCH_RESULT_DIR', join(home, 'results'));
+	home = mkdtempSync(join(tmpdir(), 'retriever-p0-discovery-'));
+	vi.stubEnv('RETRIEVER_RESULT_DIR', join(home, 'results'));
 	vi.stubGlobal('fetch', fetch_mock);
 	fetch_mock.mockClear();
 	vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -541,7 +541,7 @@ describe('P0 result privacy boundary, not tenant isolation', () => {
 	it('cannot read the handle from a separate configured result directory', async () => {
 		configure(() => false);
 		const stored = store_result('P0 directory A');
-		vi.stubEnv('OMNISEARCH_RESULT_DIR', join(home, 'other-results'));
+		vi.stubEnv('RETRIEVER_RESULT_DIR', join(home, 'other-results'));
 		const response = await read(make_server(), stored.result_id);
 		expect(response.isError).toBe(true);
 		expect(response.content[0].text).toContain(

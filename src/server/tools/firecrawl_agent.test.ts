@@ -197,7 +197,7 @@ describe('firecrawl_agent job lifecycle', () => {
 				const response = await pending;
 				if (body.status === 'cancelled') {
 					expect(response.isError).toBeUndefined();
-					expect(response._meta.omnisearch.job).toMatchObject({
+					expect(response._meta.retriever.job).toMatchObject({
 						id: job_id,
 						state: 'cancelled',
 						cancellation: 'confirmed',

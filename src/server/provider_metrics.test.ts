@@ -113,7 +113,7 @@ describe('provider metrics', () => {
 			cache_hits: 2,
 			usage: { usd: 0.007, reported_calls: 1 },
 		});
-		vi.stubEnv('OMNISEARCH_CALL_LOG', '1');
+		vi.stubEnv('RETRIEVER_CALL_LOG', '1');
 		record_provider_outcome({
 			category: 'search',
 			provider: 'fixture',
@@ -123,7 +123,7 @@ describe('provider metrics', () => {
 			cached: true,
 		});
 		expect(console.error).toHaveBeenCalledWith(
-			'omnisearch call tool=web_search provider=search/fixture outcome=ok ms=2 cached=1',
+			'retriever call tool=web_search provider=search/fixture outcome=ok ms=2 cached=1',
 		);
 	});
 
@@ -272,7 +272,7 @@ describe('provider metrics', () => {
 			elapsed_ms: 12.4,
 		});
 		expect(console.error).not.toHaveBeenCalled();
-		vi.stubEnv('OMNISEARCH_CALL_LOG', '1');
+		vi.stubEnv('RETRIEVER_CALL_LOG', '1');
 		record_provider_outcome({
 			category: 'search',
 			provider: 'fixture',
@@ -283,7 +283,7 @@ describe('provider metrics', () => {
 			usage: { credits: 3 },
 		});
 		expect(console.error).toHaveBeenCalledWith(
-			'omnisearch call tool=web_search provider=search/fixture outcome=timeout ms=12 credits=3',
+			'retriever call tool=web_search provider=search/fixture outcome=timeout ms=12 credits=3',
 		);
 	});
 });

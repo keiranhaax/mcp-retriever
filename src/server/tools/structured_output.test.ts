@@ -55,9 +55,9 @@ const respond = (text = 'Evidence [1].') => {
 	});
 };
 beforeEach(() => {
-	directory = mkdtempSync(join(tmpdir(), 'omnisearch-structured-'));
+	directory = mkdtempSync(join(tmpdir(), 'retriever-structured-'));
 	vi.stubEnv('HOME', directory);
-	vi.stubEnv('OMNISEARCH_RESULT_DIR', join(directory, 'results'));
+	vi.stubEnv('RETRIEVER_RESULT_DIR', join(directory, 'results'));
 	for (const item of settings) item.api_key = undefined;
 	config.search.tavily.api_key = 'structured-fixture-key';
 	config.processing.tavily_extract.api_key = 'structured-fixture-key';
@@ -203,12 +203,12 @@ it.each([
 	'classifies $name $mode retention $failure without provider degradation',
 	async ({ name, mode, failure }) => {
 		if (failure === 'quota') {
-			vi.stubEnv('OMNISEARCH_RESULT_MAX_BYTES', '1');
-			vi.stubEnv('OMNISEARCH_RESULT_STORE_MAX_BYTES', '1');
+			vi.stubEnv('RETRIEVER_RESULT_MAX_BYTES', '1');
+			vi.stubEnv('RETRIEVER_RESULT_STORE_MAX_BYTES', '1');
 		} else {
 			const file = join(directory, 'PRIVATE_STORAGE_PATH');
 			writeFileSync(file, 'fixture');
-			vi.stubEnv('OMNISEARCH_RESULT_DIR', join(file, 'results'));
+			vi.stubEnv('RETRIEVER_RESULT_DIR', join(file, 'results'));
 		}
 		respond('PRIVATE_EVIDENCE_CANARY'.repeat(4000));
 		const result = await call(name, {
@@ -243,8 +243,8 @@ it.each([
 );
 
 it('classifies a canonical retention failure without exposing evidence or a false handle', async () => {
-	vi.stubEnv('OMNISEARCH_RESULT_MAX_BYTES', '1');
-	vi.stubEnv('OMNISEARCH_RESULT_STORE_MAX_BYTES', '1');
+	vi.stubEnv('RETRIEVER_RESULT_MAX_BYTES', '1');
+	vi.stubEnv('RETRIEVER_RESULT_STORE_MAX_BYTES', '1');
 	respond('PRIVATE_EVIDENCE_CANARY'.repeat(1000));
 	const result = await call('web_extract', {
 		provider: 'tavily',

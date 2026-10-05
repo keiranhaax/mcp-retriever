@@ -43,7 +43,7 @@ const call = async (
 	);
 const value = (response: any) =>
 	JSON.parse(response.result.content[0].text);
-const meta = (response: any) => response.result?._meta?.omnisearch;
+const meta = (response: any) => response.result?._meta?.retriever;
 const reconstruct = async (id: string) => {
 	let offset = 1,
 		byte_offset = 0,
@@ -107,8 +107,8 @@ beforeEach(() => {
 	fetch_mock.mockReset();
 	for (const setting of settings)
 		setting.api_key = 'p2-offline-fixture-key';
-	home = mkdtempSync(join(tmpdir(), 'omnisearch-p2-lifecycle-'));
-	vi.stubEnv('OMNISEARCH_RESULT_DIR', home);
+	home = mkdtempSync(join(tmpdir(), 'retriever-p2-lifecycle-'));
+	vi.stubEnv('RETRIEVER_RESULT_DIR', home);
 	server = create_server({ name: 'p2-fixture', version: '1' });
 });
 afterEach(() => {
@@ -184,8 +184,8 @@ describe('P2 public job lifecycle', () => {
 	it.each(scenarios)(
 		'$name preserves accepted job recovery when completed evidence cannot be stored',
 		async (scenario) => {
-			vi.stubEnv('OMNISEARCH_RESULT_MAX_BYTES', '1');
-			vi.stubEnv('OMNISEARCH_RESULT_STORE_MAX_BYTES', '1');
+			vi.stubEnv('RETRIEVER_RESULT_MAX_BYTES', '1');
+			vi.stubEnv('RETRIEVER_RESULT_STORE_MAX_BYTES', '1');
 			fetch_mock.mockResolvedValue(
 				json(scenario.body('completed', evidence.repeat(4000))),
 			);
@@ -340,8 +340,8 @@ describe('P2 public job lifecycle', () => {
 	it.each(scenarios)(
 		'$name keeps recovery when partial storage fails, without a false handle',
 		async (scenario) => {
-			vi.stubEnv('OMNISEARCH_RESULT_MAX_BYTES', '1');
-			vi.stubEnv('OMNISEARCH_RESULT_STORE_MAX_BYTES', '1');
+			vi.stubEnv('RETRIEVER_RESULT_MAX_BYTES', '1');
+			vi.stubEnv('RETRIEVER_RESULT_STORE_MAX_BYTES', '1');
 			fetch_mock.mockResolvedValue(
 				json(scenario.body('failed', evidence.repeat(4000))),
 			);

@@ -183,7 +183,7 @@ describe('audited guard admission and headers', () => {
 			const unauthorized = await send(port, '{}', 'wrong');
 			expect(unauthorized.status).toBe(401);
 			expect(unauthorized.headers['www-authenticate']).toBe(
-				'ApiKey realm="omnisearch"',
+				'ApiKey realm="retriever"',
 			);
 			const response = await send(port);
 			expect(

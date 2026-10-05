@@ -58,8 +58,8 @@ const respond = (urls = [first, first, second]) => {
 	});
 };
 beforeEach(() => {
-	directory = mkdtempSync(join(tmpdir(), 'omnisearch-workflow-'));
-	vi.stubEnv('OMNISEARCH_RESULT_DIR', directory);
+	directory = mkdtempSync(join(tmpdir(), 'retriever-workflow-'));
+	vi.stubEnv('RETRIEVER_RESULT_DIR', directory);
 	for (const item of settings) item.api_key = undefined;
 	config.search.tavily.api_key = 'workflow-fixture-key';
 	config.processing.tavily_extract.api_key = 'workflow-fixture-key';
@@ -221,8 +221,8 @@ it('selects query passages with offsets into retained canonical content', async 
 });
 
 it('fails closed when canonical evidence cannot be retained', async () => {
-	vi.stubEnv('OMNISEARCH_RESULT_MAX_BYTES', '1');
-	vi.stubEnv('OMNISEARCH_RESULT_STORE_MAX_BYTES', '1');
+	vi.stubEnv('RETRIEVER_RESULT_MAX_BYTES', '1');
+	vi.stubEnv('RETRIEVER_RESULT_STORE_MAX_BYTES', '1');
 	respond([first]);
 	const ordinary = fetch_mock.getMockImplementation()!;
 	fetch_mock.mockImplementation(async (target, options) =>

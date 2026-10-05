@@ -32,7 +32,7 @@ export const tool_groups: Record<string, readonly CapabilityGroup[]> =
 	};
 
 export const configured_tool_groups = (
-	raw = process.env.OMNISEARCH_TOOL_GROUPS,
+	raw = process.env.RETRIEVER_TOOL_GROUPS,
 ): ReadonlySet<CapabilityGroup> => {
 	if (raw === undefined || raw === 'all')
 		return new Set(capability_groups);
@@ -47,7 +47,7 @@ export const configured_tool_groups = (
 		)
 	)
 		throw new Error(
-			'Invalid OMNISEARCH_TOOL_GROUPS: use all, none, or a comma-separated list of research, media, business, automation',
+			'Invalid RETRIEVER_TOOL_GROUPS: use all, none, or a comma-separated list of research, media, business, automation',
 		);
 	return new Set(groups as CapabilityGroup[]);
 };
