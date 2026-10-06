@@ -3,30 +3,41 @@
 [![built with vite+](https://img.shields.io/badge/built%20with-Vite+-646CFF?logo=vite&logoColor=white)](https://viteplus.dev)
 [![tested with vitest](https://img.shields.io/badge/tested%20with-Vitest-6E9F18?logo=vitest&logoColor=white)](https://vitest.dev)
 
-> [!IMPORTANT] This repository is a customized fork of
+<!-- prettier-ignore -->
+> [!NOTE]
+> **Formerly `mcp-omnisearch`.** In October 2026 this project took a
+> turn and was renamed `mcp-retriever`. It began as a customized fork
+> of Scott Spence's
+> [mcp-omnisearch](https://github.com/spences10/mcp-omnisearch) and
+> grew into fused multi-provider search, page extraction, archive
+> fallback, and stored-result read-back, so the new name says what it
+> does and stops it sharing a name with the project it came from. Old
+> GitHub links redirect here and tool names are unchanged. If you run
+> the server yourself, see
+> [Upgrading from mcp-omnisearch](#upgrading-from-mcp-omnisearch).
+
+<!-- prettier-ignore -->
+> [!IMPORTANT]
+> This repository is a customized fork of
 > [spences10/mcp-omnisearch](https://github.com/spences10/mcp-omnisearch).
 > It preserves the original project's unified search foundation while
 > maintaining a different provider catalog, expanded tool surface,
 > hardened remote transport, and production-oriented result handling.
-> Kagi is not included; You.com is available as a search fallback. It
-> was renamed from `mcp-omnisearch` in October 2026: environment
-> variables use the `RETRIEVER_` prefix, resources use `retriever://`,
-> and result metadata uses `_meta.retriever`. Dated records under
-> `docs/` keep the names in use when they were written.
+> Kagi is not included; You.com is available as a search fallback.
 
 A Model Context Protocol (MCP) server that gives agents one interface
 for web search, cited research, GitHub discovery, content extraction,
 news and media search, web automation, and business intelligence.
 
 The current fork integrates Tavily, Brave, Exa, GitHub, You.com,
-Linkup, Firecrawl, and Context.dev through four consolidated tools,
+Linkup, Firecrawl, and Context.dev through five consolidated tools,
 thirteen focused tools, and one bounded search/read workflow. Tools
 and providers are registered only when their required API keys are
 available.
 
 ## What this fork adds
 
-- **Expanded MCP surface:** 18 tools covering search, research,
+- **Expanded MCP surface:** 19 tools covering search, research,
   extraction, news, media, autonomous web tasks, brand intelligence,
   style guides, business classification, and transaction
   identification.
@@ -686,6 +697,39 @@ Documentation-only edits do not require the runtime integration gate.
 Docker checks apply only to separately scoped Docker work, not the
 native Node/PM2 deployment.
 
+## Upgrading from mcp-omnisearch
+
+This project was called `mcp-omnisearch` until October 2026. Tool
+names, tool arguments, and provider keys such as `TAVILY_API_KEY` are
+unchanged. Everything that carried the old name changed in one
+breaking step, with no aliases:
+
+| Before                                                 | Now                              |
+| ------------------------------------------------------ | -------------------------------- |
+| `OMNISEARCH_*` environment variables                   | `RETRIEVER_*`, same suffixes     |
+| `omnisearch://` resource URIs                          | `retriever://`                   |
+| `_meta.omnisearch` in tool results                     | `_meta.retriever`                |
+| `~/.cache/mcp-omnisearch/results` default result store | `~/.cache/mcp-retriever/results` |
+| `mcp-omnisearch` package, bin, and Compose service     | `mcp-retriever`                  |
+| `/omnisearch` MCPO route in the Docker image           | `/retriever`                     |
+| `ApiKey realm="omnisearch"` in `WWW-Authenticate`      | `ApiKey realm="retriever"`       |
+
+To move an existing installation:
+
+1. Rename every `OMNISEARCH_*` setting in your environment or `.env`.
+   `start-server.sh` exits and names any legacy variable it still
+   finds, so a setting such as a spending cap cannot switch off
+   unnoticed. The direct stdio and Docker launch paths ignore the old
+   names without warning, so check those by hand.
+2. If you use the default result store, move `~/.cache/mcp-omnisearch`
+   to `~/.cache/mcp-retriever` to keep stored results and the
+   spending-cap totals in `spend-ledger.json`.
+3. Update clients that read `omnisearch://` resources or
+   `_meta.omnisearch`, and any configured path to `dist/index.js`.
+4. Optionally point an existing clone at the new URL with
+   `git remote set-url origin https://github.com/keiranhaax/mcp-retriever.git`.
+   The old URL redirects.
+
 ## Fork scope and upstream relationship
 
 This is a maintained customization, not a drop-in mirror of upstream.
@@ -703,6 +747,8 @@ Notable differences include:
 
 The original project and authorship remain credited to
 [Scott Spence's mcp-omnisearch](https://github.com/spences10/mcp-omnisearch).
+The rename does not change that: this project exists because of
+mcp-omnisearch, and upstream changes are still reviewed and ported.
 See the repository's fork relationship and Git history for provenance.
 
 ## Contributing
