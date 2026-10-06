@@ -112,6 +112,13 @@ allowlist of variables through `env -i`. Guard settings:
 The launcher fails closed on a wildcard `BIND_HOST` (the guard needs
 an explicit address to build the allowlist).
 
+The launcher also passes `RETRIEVER_CREDENTIALS_FILE=none` unless
+`.env` sets that variable. The stdio server would otherwise fill unset
+provider settings from the per-user file that `mcp-retriever setup`
+writes (`~/.config/mcp-retriever/credentials.env`), which could enable
+a provider the allowlist left out. Set it to a path only when this
+deployment should read that file.
+
 Candidate controls, all positive integers and passed through the
 launcher allowlist:
 

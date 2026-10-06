@@ -97,6 +97,11 @@ if [[ -v RETRIEVER_TOOL_GROUPS ]]; then
   clean_env+=("RETRIEVER_TOOL_GROUPS=${RETRIEVER_TOOL_GROUPS}")
 fi
 
+# This deployment's providers are exactly the ones allowlisted below. The
+# per-user file written by `mcp-retriever setup` stays out unless the
+# operator names one, so it cannot add a provider this launcher left out.
+clean_env+=("RETRIEVER_CREDENTIALS_FILE=${RETRIEVER_CREDENTIALS_FILE:-none}")
+
 # Pass only credentials and runtime controls used by Retriever. This prevents
 # PM2 or an interactive deployment shell from leaking unrelated model secrets
 # into the MCP process.
