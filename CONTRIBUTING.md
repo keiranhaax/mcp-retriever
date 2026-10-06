@@ -119,6 +119,39 @@ failures, or unresolved concerns. Separate existing failures and
 historical evidence from fresh checks. Finish with `git diff --check`
 and review the complete diff, including new files.
 
+## npm release packaging
+
+Publish only from a fresh isolated release checkout, never the live
+service checkout. npm does not apply `pnpm-workspace.yaml` patches or
+overrides to consumers. `bundleDependencies` ships the tested runtime
+dependency tree, including the patched MCP libraries and proxy.
+
+Use a hoisted layout with copied packages and a private store. Do not
+pack a symlink to another checkout's `node_modules` or the default
+pnpm virtual-store layout:
+
+```bash
+corepack pnpm install --frozen-lockfile --ignore-scripts --node-linker=hoisted --store-dir /path/to/private-store --package-import-method=copy
+./node_modules/.bin/vp check
+./node_modules/.bin/vp test
+./node_modules/.bin/vp pack
+node scripts/smoke-mcp.mjs
+npm pack --ignore-scripts --json
+```
+
+Inspect the tarball: all runtime dependencies must be bundled, archive
+paths must stay inside `package/`, and the patched files must match
+the verified build. Install that exact tarball in a clean temporary
+npm project with `--ignore-scripts`, then rerun the offline smoke
+script with the installed package as the working directory. Verify CLI
+help and key listing with a temporary home, too. Publishing a build
+tested only against a shared dependency tree is not sufficient.
+
+After explicit publication approval, publish the tested tarball with
+`npm publish /path/to/mcp-retriever-VERSION.tgz --ignore-scripts`,
+then read the registry metadata back and compare its integrity value
+with the packed artifact. This is separate from production deployment.
+
 ## Documentation ownership and submission
 
 README owns public purpose, capabilities, setup, and navigation.

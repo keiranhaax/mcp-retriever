@@ -26,8 +26,16 @@
 		"web-interactions",
 		"web-search"
 	],
+	"homepage": "https://github.com/keiranhaax/mcp-retriever#readme",
+	"bugs": {
+		"url": "https://github.com/keiranhaax/mcp-retriever/issues"
+	},
 	"license": "MIT",
 	"author": "Scott Spence",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/keiranhaax/mcp-retriever.git"
+	},
 	"bin": {
 		"mcp-retriever": "./dist/index.js"
 	},
@@ -38,6 +46,11 @@
 	],
 	"type": "module",
 	"main": "dist/index.js",
+	"publishConfig": {
+		"access": "public",
+		"registry": "https://registry.npmjs.org/",
+		"tag": "latest"
+	},
 	"scripts": {
 		"build": "vp pack",
 		"dev": "vp pack --watch",
@@ -68,6 +81,14 @@
 		"vite-plus": "^0.2.0",
 		"vitest": "^4.1.11"
 	},
+	"bundleDependencies": [
+		"@tmcp/adapter-valibot",
+		"@tmcp/transport-stdio",
+		"mcp-proxy",
+		"octokit",
+		"tmcp",
+		"valibot"
+	],
 	"engines": {
 		"node": ">=22.0.0"
 	},

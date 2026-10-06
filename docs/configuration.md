@@ -25,8 +25,7 @@ environment allowlist.
 
 ## Client example with every provider
 
-The `npx` example requires npm publication, which is pending. For a
-source build, use `"command": "node"` and
+For a source build, use `"command": "node"` and
 `"args": ["/absolute/path/to/mcp-retriever/dist/index.js"]` instead.
 Choose only the providers you need.
 

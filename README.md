@@ -19,13 +19,6 @@ Firecrawl, and Context.dev. Configure only what you use.
 Requires **Node.js 22+** and a provider key, or your own SearXNG
 instance.
 
-**npm publication is pending.** The `npx` commands below will work
-once the package is published. For now, build from source using the
-[contributor guide](https://github.com/keiranhaax/mcp-retriever/blob/main/CONTRIBUTING.md),
-then run `corepack pnpm run build` and `node dist/index.js setup`.
-Until publication, configure your client to launch `node` with the
-absolute path to `dist/index.js` instead of the wizard's `npx` entry.
-
 ```bash
 npx -y mcp-retriever setup
 ```
