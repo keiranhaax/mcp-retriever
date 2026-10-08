@@ -77,3 +77,7 @@ Thumbs.db
 
 # MCP Registry
 .mcpregistry_*
+
+# Marketing website (maintained outside this repository)
+/website/
+/mcp-retriever-website/

@@ -31,7 +31,10 @@
 		"url": "https://github.com/keiranhaax/mcp-retriever/issues"
 	},
 	"license": "MIT",
-	"author": "Scott Spence",
+	"author": "keiranhaax",
+	"contributors": [
+		"Scott Spence (original author of mcp-omnisearch)"
+	],
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/keiranhaax/mcp-retriever.git"
