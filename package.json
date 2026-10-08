@@ -1,6 +1,6 @@
 {
 	"name": "mcp-retriever",
-	"version": "0.0.24",
+	"version": "0.0.25",
 	"description": "MCP server for multi-provider web search and content retrieval",
 	"keywords": [
 		"ai",
@@ -26,7 +26,7 @@
 		"web-interactions",
 		"web-search"
 	],
-	"homepage": "https://github.com/keiranhaax/mcp-retriever#readme",
+	"homepage": "https://keiranhaax.dev",
 	"bugs": {
 		"url": "https://github.com/keiranhaax/mcp-retriever/issues"
 	},

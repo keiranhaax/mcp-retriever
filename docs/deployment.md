@@ -267,7 +267,16 @@ restore).
 
 ## Fork metadata policy
 
-This is a private fork deployed from git, not published to npm or the
-MCP registry. `package.json` stays at `0.0.24` and `server.json` is
-unchanged; version bumps and registry metadata only matter if the fork
-is ever published upstream again.
+The fork is published to npm as `mcp-retriever` and listed in the MCP
+registry as `io.github.keiranhaax/mcp-retriever`; the first release
+under this name was `0.0.24` on 2026-10-06. `package.json` owns the
+version. `pnpm run sync-server-json` copies it into `server.json`
+before `mcp-publisher publish`, and `vp check --fix server.json`
+restores the tab indentation afterwards; `websiteUrl` and other
+registry fields are maintained by hand.
+
+Publishing a version and deploying it here are separate events. Pack
+and test release tarballs in an isolated checkout as described in the
+contributor guide, never from this live service checkout, and follow
+the staging and rollback procedure above when the running server is
+updated.

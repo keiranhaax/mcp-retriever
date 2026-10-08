@@ -1,9 +1,36 @@
-# mcp-omnisearch
+# mcp-retriever
 
-## Unreleased
+## 0.0.25
 
 ### Changes
 
+- Record fork authorship: `keiranhaax` is the package author, Scott
+  Spence is credited as the original author of `mcp-omnisearch`, and
+  `LICENSE` carries both copyright lines.
+- Point the npm homepage and the MCP registry `websiteUrl` at
+  <https://keiranhaax.dev>, and move `server.json` to the `2025-12-11`
+  registry schema.
+- Correct the deployment runbook's fork metadata policy, which still
+  described the fork as unpublished.
+
+## 0.0.24
+
+First release under the `mcp-retriever` name, published to npm and the
+MCP registry on 2026-10-06. It includes the upstream `0.0.24` patch
+changes listed at the end of this section plus the following.
+
+### Changes
+
+- Rename the project from `mcp-omnisearch` to `mcp-retriever`:
+  `RETRIEVER_*` settings, `retriever://` resources, `_meta.retriever`,
+  the `~/.cache/mcp-retriever/results` store, and the `/retriever`
+  Docker/MCPO path. The README's "License and origins" section lists
+  the renames to apply when upgrading.
+- Add `setup` and `keys` commands that store provider keys in a
+  private `~/.config/mcp-retriever/credentials.env` file and write or
+  print client configuration.
+- Bundle the patched runtime dependencies so npm installs match the
+  tested dependency tree.
 - Remove all Kagi integrations and configuration.
 - Replace URL summarization with Firecrawl v2 `summary` format.
 - Add authenticated remote pagination for oversized results.
@@ -32,9 +59,7 @@
   `docs/architecture-decision-mcp-2026-07-28.md` and the operations
   runbook in `docs/deployment.md`.
 
-## 0.0.24
-
-### Patch Changes
+### Upstream 0.0.24 patch changes
 
 - bb2f1c5: Add Tavily search operator support: map
   site/date/exact/location operators to native API parameters.

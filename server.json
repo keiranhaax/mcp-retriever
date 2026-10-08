@@ -1,19 +1,20 @@
 {
-	"$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
+	"$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
 	"name": "io.github.keiranhaax/mcp-retriever",
-	"description": "MCP server for multi-provider web search and content retrieval",
-	"status": "active",
+	"title": "mcp-retriever",
+	"description": "One MCP server for web search, page extraction, and cited research.",
 	"repository": {
 		"url": "https://github.com/keiranhaax/mcp-retriever",
 		"source": "github"
 	},
-	"version": "0.0.24",
+	"websiteUrl": "https://keiranhaax.dev",
+	"version": "0.0.25",
 	"packages": [
 		{
-			"registry_type": "npm",
-			"registry_base_url": "https://registry.npmjs.org",
+			"registryType": "npm",
+			"registryBaseUrl": "https://registry.npmjs.org",
 			"identifier": "mcp-retriever",
-			"version": "0.0.24",
+			"version": "0.0.25",
 			"transport": {
 				"type": "stdio"
 			}
