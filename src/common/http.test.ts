@@ -54,6 +54,13 @@ describe('http_json', () => {
 			false,
 		],
 		[
+			402,
+			'payment required',
+			ErrorType.API_ERROR,
+			'entitlement',
+			false,
+		],
+		[
 			403,
 			'forbidden',
 			ErrorType.ENTITLEMENT_REQUIRED,
@@ -372,6 +379,53 @@ describe('http_json', () => {
 			provider: 'test_provider',
 			message: 'API key does not have access to this endpoint',
 		});
+	});
+
+	it('throws a non-retryable credits error for 402 usage-exceeded responses without echoing the body', async () => {
+		fetch_mock.mockResolvedValue(
+			new Response(
+				JSON.stringify({
+					error: {
+						code: 'USAGE_EXCEEDED',
+						detail: 'PRIVATE_BODY',
+					},
+					error_data: {
+						retry_conditions: 'PRIVATE_RETRY',
+						refill_at: 'PRIVATE_REFILL',
+					},
+				}),
+				{ status: 402 },
+			),
+		);
+
+		const error = await http_json(
+			'test_provider',
+			'https://api.example.com',
+		).catch((failure: unknown) => failure);
+
+		expect(fetch_mock).toHaveBeenCalledTimes(1);
+		expect(error).toMatchObject({
+			type: ErrorType.API_ERROR,
+			provider: 'test_provider',
+			message: 'Provider credits exhausted or payment required',
+			details: { status: 402 },
+		});
+		expect(is_retryable_error(error)).toBe(false);
+		expect(public_error_metadata(error)).toEqual({
+			kind: 'entitlement',
+			retryable: false,
+			provider: 'test_provider',
+			http_status: 402,
+		});
+		expect(create_error_response(error).error).toContain(
+			'Provider credits exhausted or payment required',
+		);
+		expect(
+			JSON.stringify({
+				error,
+				response: create_error_response(error),
+			}),
+		).not.toMatch(/PRIVATE/);
 	});
 
 	it('classifies endpoint-missing responses when the body indicates a missing route', async () => {

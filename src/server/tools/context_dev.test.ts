@@ -76,6 +76,7 @@ describe('Context.dev tools', () => {
 			'context_styleguide',
 			'context_classify',
 			'context_transaction_identify',
+			'context_news',
 		]);
 	});
 
@@ -405,6 +406,447 @@ describe('Context.dev tools', () => {
 			'Invalid URL provided',
 		);
 		expect(fetch_mock).not.toHaveBeenCalled();
+	});
+
+	describe('web_search and map modes', () => {
+		const setup = (name = 'context_web_extract') => {
+			fetch_mock.mockImplementation(
+				async () => new Response('{"success":true}'),
+			);
+			const { server, tools } = create_server();
+			initialize_context_dev();
+			register_context_dev_tools(server as any);
+			return tools.find((tool) => tool.definition.name === name)!;
+		};
+		const last_body = () =>
+			JSON.parse(
+				fetch_mock.mock.calls[fetch_mock.mock.calls.length - 1][1]
+					.body,
+			);
+
+		it('forwards limit as numResults for web_search', async () => {
+			const tool = setup();
+			await tool.handler(
+				v.parse(tool.definition.schema, {
+					mode: 'web_search',
+					query: 'mcp servers',
+					limit: 25,
+				}),
+			);
+
+			const [url, options] = fetch_mock.mock.calls[0];
+			expect(url).toBe('https://api.context.dev/v1/web/search');
+			expect(options.method).toBe('POST');
+			expect(last_body()).toMatchObject({
+				query: 'mcp servers',
+				numResults: 25,
+			});
+		});
+
+		it('requests the default result count when limit is omitted', async () => {
+			const tool = setup();
+			await tool.handler(
+				v.parse(tool.definition.schema, {
+					mode: 'web_search',
+					query: 'mcp servers',
+				}),
+			);
+			expect(last_body().numResults).toBe(10);
+		});
+
+		it('builds highlightsOptions only when highlights is true', async () => {
+			const tool = setup();
+			await tool.handler({
+				mode: 'web_search',
+				query: 'stripe auth',
+				highlights: true,
+				highlights_max_characters: 1500,
+			});
+			expect(last_body().highlightsOptions).toEqual({
+				enabled: true,
+				maxCharacters: 1500,
+			});
+
+			await tool.handler({
+				mode: 'web_search',
+				query: 'stripe auth',
+				highlights: true,
+			});
+			expect(last_body().highlightsOptions).toEqual({
+				enabled: true,
+			});
+
+			await tool.handler({
+				mode: 'web_search',
+				query: 'stripe auth',
+				highlights: false,
+				highlights_max_characters: 1500,
+			});
+			expect(last_body()).not.toHaveProperty('highlightsOptions');
+			expect(last_body()).not.toHaveProperty('markdownOptions');
+		});
+
+		it('maps language, description length and main-content options', async () => {
+			const tool = setup();
+			await tool.handler({
+				mode: 'web_search',
+				query: 'api changelog',
+				language: 'DE',
+				description_max_characters: 200,
+				main_content_only: true,
+				highlights: true,
+			});
+			expect(last_body()).toMatchObject({
+				languages: ['de'],
+				descriptionMaxCharacters: 200,
+				markdownOptions: {
+					enabled: false,
+					useMainContentOnly: true,
+				},
+				highlightsOptions: { enabled: true },
+			});
+
+			await tool.handler({
+				mode: 'web_search',
+				query: 'api changelog',
+				scrape_markdown: true,
+				main_content_only: true,
+				maxAgeMs: 0,
+			});
+			expect(last_body().markdownOptions).toEqual({
+				enabled: true,
+				useMainContentOnly: true,
+				maxAgeMs: 0,
+			});
+		});
+
+		it('keeps the legacy markdownOptions shape for scrape_markdown', async () => {
+			const tool = setup();
+			await tool.handler({
+				mode: 'web_search',
+				query: 'api changelog',
+				scrape_markdown: true,
+				maxAgeMs: 5000,
+			});
+			expect(last_body().markdownOptions).toEqual({
+				enabled: true,
+				maxAgeMs: 5000,
+			});
+		});
+
+		it.each([
+			[{ highlights_max_characters: 99 }],
+			[{ highlights_max_characters: 20001 }],
+			[{ highlights_max_characters: 1.5 }],
+			[{ description_max_characters: -1 }],
+			[{ language: 'english' }],
+			[{ language: 'e1' }],
+		])(
+			'bounds new web_search parameters in the public schema',
+			(extra) => {
+				const tool = setup();
+				expect(
+					v.safeParse(tool.definition.schema, {
+						mode: 'web_search',
+						query: 'fixture',
+						...extra,
+					}).success,
+				).toBe(false);
+			},
+		);
+
+		it('rejects blank web_search queries before networking', async () => {
+			const tool = setup();
+			const result = await tool.handler({
+				mode: 'web_search',
+				query: '   ',
+			});
+			expect(result.isError).toBe(true);
+			expect(fetch_mock).not.toHaveBeenCalled();
+		});
+
+		it('exposes map as a mode value', () => {
+			const tool = setup();
+			expect(
+				v.safeParse(tool.definition.schema, {
+					mode: 'map',
+					domain: 'example.com',
+				}).success,
+			).toBe(true);
+		});
+
+		it('maps map mode to the documented URL discovery endpoint', async () => {
+			const tool = setup();
+			await tool.handler({
+				mode: 'map',
+				domain: 'example.com',
+				query: 'pricing pages',
+				limit: 25,
+				include_subdomains: true,
+			});
+
+			const [url, options] = fetch_mock.mock.calls[0];
+			expect(url).toBe(
+				'https://api.context.dev/v1/web/urls?domain=example.com&includeSubdomains=true&maxLinks=25&search=pricing+pages',
+			);
+			expect(options.method).toBe('GET');
+			expect(options.headers.Authorization).toBe(
+				'Bearer ctx-test-key',
+			);
+		});
+
+		it('derives the map domain from a public url', async () => {
+			const tool = setup();
+			await tool.handler({
+				mode: 'map',
+				url: 'https://docs.example.com/guide',
+			});
+			expect(fetch_mock.mock.calls[0][0]).toBe(
+				'https://api.context.dev/v1/web/urls?domain=docs.example.com',
+			);
+		});
+
+		it.each([
+			[{ domain: '169.254.169.254' }],
+			[{ url: 'http://127.0.0.1/admin' }],
+			[{ domain: 'example.com', url: 'https://example.com' }],
+			[{}],
+			[{ domain: 'example.com', query: 'x' }],
+		])(
+			'rejects invalid map targets before networking',
+			async (target) => {
+				const tool = setup();
+				const result = await tool.handler({
+					mode: 'map',
+					...target,
+				});
+				expect(result.isError).toBe(true);
+				expect(fetch_mock).not.toHaveBeenCalled();
+			},
+		);
+
+		it('leaves sitemap mode on the scrape sitemap endpoint', async () => {
+			const tool = setup();
+			await tool.handler({
+				mode: 'sitemap',
+				domain: 'example.com',
+				limit: 5,
+			});
+			expect(fetch_mock.mock.calls[0][0]).toBe(
+				'https://api.context.dev/v1/web/scrape/sitemap?domain=example.com&maxLinks=5',
+			);
+		});
+	});
+
+	describe('context_news', () => {
+		const setup = () => {
+			fetch_mock.mockImplementation(
+				async () =>
+					new Response(
+						JSON.stringify({
+							data: [],
+							has_more: false,
+							next_cursor: null,
+						}),
+					),
+			);
+			const { server, tools } = create_server();
+			initialize_context_dev();
+			register_context_dev_tools(server as any);
+			return tools.find(
+				(tool) => tool.definition.name === 'context_news',
+			)!;
+		};
+		const last_body = () =>
+			JSON.parse(
+				fetch_mock.mock.calls[fetch_mock.mock.calls.length - 1][1]
+					.body,
+			);
+
+		it('does not register when the API key is missing', () => {
+			config.search.context_dev.api_key = undefined;
+			const { server, tools } = create_server();
+			initialize_context_dev();
+			register_context_dev_tools(server as any);
+			expect(tools.map((tool) => tool.definition.name)).not.toContain(
+				'context_news',
+			);
+		});
+
+		it('respects the tool allowlist', () => {
+			const { server, tools } = create_server();
+			initialize_context_dev();
+			register_context_dev_tools(
+				server as any,
+				(name) => name !== 'context_news',
+			);
+			expect(tools.map((tool) => tool.definition.name)).not.toContain(
+				'context_news',
+			);
+		});
+
+		it('sends natural-language news searches to the news endpoint', async () => {
+			const tool = setup();
+			const result = await tool.handler(
+				v.parse(tool.definition.schema, {
+					query: ' chip export restrictions to China ',
+				}),
+			);
+
+			const [url, options] = fetch_mock.mock.calls[0];
+			expect(url).toBe('https://api.context.dev/v1/news/search');
+			expect(options.method).toBe('POST');
+			expect(options.headers.Authorization).toBe(
+				'Bearer ctx-test-key',
+			);
+			expect(last_body()).toEqual({
+				searchBy: {
+					type: 'natural_language',
+					query: 'chip export restrictions to China',
+				},
+				limit: 10,
+			});
+			expect(result.isError).not.toBe(true);
+			expect(JSON.stringify(result)).not.toContain('ctx-test-key');
+		});
+
+		it.each([
+			[
+				{ company_name: 'Acme Corp' },
+				{ type: 'name', name: 'Acme Corp' },
+			],
+			[
+				{ domain: 'stripe.com' },
+				{ type: 'domain', domain: 'stripe.com' },
+			],
+			[{ ticker: 'AAPL' }, { type: 'ticker', ticker: 'AAPL' }],
+			[
+				{ isin: 'US0378331005' },
+				{ type: 'isin', isin: 'US0378331005' },
+			],
+		])(
+			'sends company-keyed news lookups as entity searches',
+			async (args, entity) => {
+				const tool = setup();
+				await tool.handler({ ...args, sort: 'newest', limit: 5 });
+				expect(last_body()).toEqual({
+					searchBy: { type: 'entity', entity },
+					sortBy: { type: 'newest' },
+					limit: 5,
+				});
+			},
+		);
+
+		it('passes the cursor, filters and date window through', async () => {
+			const tool = setup();
+			await tool.handler({
+				domain: 'stripe.com',
+				article_type: ['press_release'],
+				date_from: '2026-08-01',
+				date_to: '2026-08-31',
+				sort: 'relevance',
+				limit: 20,
+				cursor: 'opaque-cursor-1',
+			});
+			expect(last_body()).toEqual({
+				searchBy: {
+					type: 'entity',
+					entity: { type: 'domain', domain: 'stripe.com' },
+				},
+				filterBy: {
+					articleType: ['press_release'],
+					date: {
+						from: Date.parse('2026-08-01'),
+						to: Date.parse('2026-09-01') - 1,
+					},
+				},
+				sortBy: { type: 'relevance' },
+				limit: 20,
+				cursor: 'opaque-cursor-1',
+			});
+		});
+
+		it('maps publisher filters and omits empty filterBy', async () => {
+			const tool = setup();
+			await tool.handler({
+				query: 'semiconductor supply chain',
+				source_domain: ['reuters.com'],
+			});
+			expect(last_body().filterBy).toEqual({
+				sourceDomain: ['reuters.com'],
+			});
+
+			await tool.handler({ query: 'semiconductor supply chain' });
+			expect(last_body()).not.toHaveProperty('filterBy');
+			expect(last_body()).not.toHaveProperty('cursor');
+		});
+
+		it.each([
+			[{}],
+			[{ query: 'chips', domain: 'example.com' }],
+			[{ company_name: 'Acme', ticker: 'ACME' }],
+			[{ query: '   ' }],
+			[{ query: 'chips', sort: 'newest' }],
+			[
+				{
+					domain: 'example.com',
+					article_type: ['editorial'],
+					source_domain: ['reuters.com'],
+				},
+			],
+			[{ domain: 'example.com', date_from: 'yesterday-ish' }],
+			[
+				{
+					domain: 'example.com',
+					date_from: '2026-09-02',
+					date_to: '2026-09-01',
+				},
+			],
+			[{ domain: '169.254.169.254' }],
+			[{ isin: 'not-an-isin' }],
+			[{ ticker: 'AA PL' }],
+		])(
+			'rejects invalid news inputs before networking',
+			async (args) => {
+				const tool = setup();
+				const result = await tool.handler(args);
+				expect(result.isError).toBe(true);
+				expect(fetch_mock).not.toHaveBeenCalled();
+			},
+		);
+
+		it.each([
+			['limit', [0, -1, 1.5, 101, 1e12]],
+			['cursor', ['', 'x'.repeat(301)]],
+			['query', ['x', 'x'.repeat(1001)]],
+			['company_name', ['x', 'x'.repeat(201)]],
+			['ticker', ['', 'x'.repeat(21), 'A B']],
+			['isin', ['US037833100', 'not-an-isin']],
+			[
+				'article_type',
+				[
+					['blog'],
+					[],
+					['editorial', 'editorial', 'advisory', 'editorial'],
+				],
+			],
+			['source_domain', [[], ['a.com', 'b.com', 'c.com', 'd.com']]],
+			['sort', ['oldest']],
+		])(
+			'bounds context_news %s in its public schema',
+			(field, values) => {
+				const tool = setup();
+				for (const value of values as unknown[]) {
+					expect(
+						v.safeParse(tool.definition.schema, {
+							domain: 'example.com',
+							[field]: value,
+						}).success,
+						`${field}:${JSON.stringify(value)}`,
+					).toBe(false);
+				}
+			},
+		);
 	});
 });
 

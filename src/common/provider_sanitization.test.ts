@@ -96,6 +96,18 @@ describe('provider control sanitization', () => {
 				searchType: 'auto',
 			}),
 		).toEqual({ requestId: undefined, resolvedSearchType: 'auto' });
+		expect(
+			sanitize_exa_control_metadata({
+				requestId,
+				resolvedSearchType: 'lite',
+			}),
+		).toEqual({ requestId, resolvedSearchType: 'lite' });
+		expect(
+			sanitize_exa_control_metadata({
+				requestId,
+				searchType: 'deep-lite',
+			}),
+		).toEqual({ requestId, resolvedSearchType: 'deep-lite' });
 	});
 
 	it('projects only known grounding envelopes and preserves citation evidence', () => {

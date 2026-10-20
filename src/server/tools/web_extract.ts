@@ -19,6 +19,7 @@ import { define_presented_tool } from './define_tool.js';
 import { tool_descriptions } from './descriptions.js';
 
 // Concrete provider imports
+import { ContextHighlightsProvider } from '../../providers/processing/context_highlights/index.js';
 import { ExaContentsProvider } from '../../providers/processing/exa_contents/index.js';
 import { ExaSimilarProvider } from '../../providers/processing/exa_similar/index.js';
 import { FirecrawlActionsProvider } from '../../providers/processing/firecrawl_actions/index.js';
@@ -32,7 +33,11 @@ import {
 } from '../../providers/processing/tavily_extract/index.js';
 import { FirecrawlSearchProvider } from '../../providers/processing/firecrawl_search/index.js';
 
-export type WebExtractProvider = 'tavily' | 'firecrawl' | 'exa';
+export type WebExtractProvider =
+	| 'tavily'
+	| 'firecrawl'
+	| 'exa'
+	| 'context';
 
 export type WebExtractMode =
 	| 'extract'
@@ -43,7 +48,9 @@ export type WebExtractMode =
 	| 'actions'
 	| 'search'
 	| 'contents'
-	| 'similar';
+	| 'similar'
+	| 'highlights'
+	| 'markdown';
 
 // Provider key combines provider + mode
 type ProviderKey = string;
@@ -119,6 +126,23 @@ export const initialize_web_extract = (): boolean => {
 		);
 	}
 
+	// Context.dev
+	if (
+		is_api_key_valid(
+			config.processing.context_highlights.api_key,
+			'context',
+		)
+	) {
+		providers.set(
+			make_key('context', 'highlights'),
+			new ContextHighlightsProvider('highlights'),
+		);
+		providers.set(
+			make_key('context', 'markdown'),
+			new ContextHighlightsProvider('markdown'),
+		);
+	}
+
 	return providers.size > 0;
 };
 
@@ -140,6 +164,7 @@ const default_modes: Record<WebExtractProvider, WebExtractMode> = {
 	tavily: 'extract',
 	firecrawl: 'scrape',
 	exa: 'contents',
+	context: 'highlights',
 };
 
 // Provider:mode pairs that read the given pages, so a Wayback snapshot
@@ -164,6 +189,7 @@ const valid_modes: Record<WebExtractProvider, WebExtractMode[]> = {
 		'search',
 	],
 	exa: ['contents', 'similar'],
+	context: ['highlights', 'markdown'],
 };
 
 const firecrawl_options_schema = v.object({
@@ -279,10 +305,10 @@ const firecrawl_search_options_schema = v.object({
 	),
 	categories: v.optional(
 		v.pipe(
-			v.array(v.picklist(['github', 'research', 'pdf'])),
-			v.maxLength(3),
+			v.array(v.picklist(['developer', 'gov', 'research', 'pdf'])),
+			v.maxLength(4),
 			v.description(
-				'Firecrawl search categories for narrowed retrieval.',
+				'Firecrawl search categories for narrowed retrieval. developer: issues, merged PRs, READMEs, and documentation sites. gov: US government legal and regulatory sources.',
 			),
 		),
 	),
@@ -422,14 +448,14 @@ export const register_web_extract = (
 						v.minLength(1),
 						v.maxLength(10000),
 						v.description(
-							'Search query (required when mode=search with Firecrawl). Also used by Tavily extract for chunk reranking.',
+							'Search query (required when mode=search with Firecrawl). Also used by Tavily extract for chunk reranking, and required by Context.dev highlights as the relevance query.',
 						),
 					),
 				),
 				provider: v.pipe(
 					v.picklist(available),
 					v.description(
-						'Provider to use: Firecrawl for scrape/summarize/crawl/map/extract/actions/search, Exa for contents/similar, Tavily for extraction.',
+						'Provider to use: Firecrawl for scrape/summarize/crawl/map/extract/actions/search, Exa for contents/similar, Tavily for extraction, Context for highlights/markdown.',
 					),
 				),
 				mode: v.optional(
@@ -444,9 +470,11 @@ export const register_web_extract = (
 							'search',
 							'contents',
 							'similar',
+							'highlights',
+							'markdown',
 						]),
 						v.description(
-							'Provider mode. firecrawl supports scrape/summarize/crawl/map/extract/actions/search; exa supports contents/similar; tavily supports extract. Defaults to provider default.',
+							'Provider mode. firecrawl supports scrape/summarize/crawl/map/extract/actions/search; exa supports contents/similar; tavily supports extract; context supports highlights (needs query) and markdown. Defaults to provider default.',
 						),
 					),
 				),
@@ -612,15 +640,17 @@ export const register_web_extract = (
 								? screenshot
 									? { screenshot: true }
 									: undefined
-								: provider === 'tavily'
-									? {
-											query,
-											...(chunks_per_source !== undefined
-												? { chunks_per_source }
-												: {}),
-											...(format !== undefined ? { format } : {}),
-										}
-									: undefined;
+								: provider === 'context'
+									? { query }
+									: provider === 'tavily'
+										? {
+												query,
+												...(chunks_per_source !== undefined
+													? { chunks_per_source }
+													: {}),
+												...(format !== undefined ? { format } : {}),
+											}
+										: undefined;
 
 			if (
 				archive_fallback !== undefined &&

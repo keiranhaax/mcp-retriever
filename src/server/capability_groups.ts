@@ -18,6 +18,7 @@ export const tool_groups: Record<string, readonly CapabilityGroup[]> =
 		search_and_read: ['research'],
 		brave_llm_context: ['research'],
 		brave_news_search: ['research'],
+		context_news: ['research'],
 		brave_media_search: ['media'],
 		web_extract: ['research', 'media', 'automation'],
 		context_web_extract: ['research', 'media', 'automation'],

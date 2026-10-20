@@ -29,6 +29,7 @@ const tool_names = [
 	'context_styleguide',
 	'context_classify',
 	'context_transaction_identify',
+	'context_news',
 ];
 
 let enabled = false;
@@ -84,6 +85,7 @@ const register_context_web_extract = (
 					'sitemap',
 					'images',
 					'screenshot',
+					'map',
 					'web_search',
 				]),
 				url: v.optional(v.string()),
@@ -103,6 +105,28 @@ const register_context_web_extract = (
 						'last_year',
 					]),
 				),
+				highlights: v.optional(v.boolean()),
+				highlights_max_characters: v.optional(
+					v.pipe(
+						v.number(),
+						v.integer(),
+						v.minValue(100),
+						v.maxValue(20000),
+					),
+				),
+				description_max_characters: v.optional(
+					v.pipe(
+						v.number(),
+						v.integer(),
+						v.minValue(0),
+						v.maxValue(10000),
+					),
+				),
+				language: v.optional(
+					v.pipe(v.string(), v.regex(/^[A-Za-z]{2,3}$/)),
+				),
+				main_content_only: v.optional(v.boolean()),
+				include_subdomains: v.optional(v.boolean()),
 			}),
 		},
 		async ({
@@ -117,6 +141,12 @@ const register_context_web_extract = (
 			includeDomains,
 			excludeDomains,
 			freshness,
+			highlights,
+			highlights_max_characters,
+			description_max_characters,
+			language,
+			main_content_only,
+			include_subdomains,
 		}) => {
 			let result: unknown;
 			if (domain !== undefined)
@@ -193,6 +223,27 @@ const register_context_web_extract = (
 					'/web/scrape/sitemap',
 					optional_query({ domain, timeoutMS, maxLinks: limit }),
 				);
+			} else if (mode === 'map') {
+				require_one('context_web_extract', { domain, url });
+				const topic = query?.trim();
+				if (topic && (topic.length < 2 || topic.length > 200))
+					throw new ProviderError(
+						ErrorType.INVALID_INPUT,
+						'query must be 2-200 characters when mapping a site',
+						'context_web_extract',
+					);
+				result = await context_dev_get(
+					'/web/urls',
+					optional_query({
+						domain:
+							domain ??
+							new URL(public_url(url!, 'context_web_extract'))
+								.hostname,
+						includeSubdomains: include_subdomains,
+						maxLinks: limit,
+						search: topic || undefined,
+					}),
+				);
 			} else if (mode === 'screenshot') {
 				require_one('context_web_extract', { domain, url });
 				result = await context_dev_get(
@@ -207,23 +258,43 @@ const register_context_web_extract = (
 					}),
 				);
 			} else {
-				if (!query)
+				const search_query = query?.trim();
+				if (!search_query || search_query.length > 500)
 					throw new ProviderError(
 						ErrorType.INVALID_INPUT,
-						'query is required',
+						'query is required (1-500 characters)',
 						'context_web_extract',
 					);
+				// Highlights read each page with the markdown settings,
+				// so main_content_only applies even without markdown.
+				const markdown_options =
+					scrape_markdown || main_content_only !== undefined
+						? optional_query({
+								enabled: scrape_markdown === true,
+								useMainContentOnly: main_content_only,
+								maxAgeMs,
+							})
+						: undefined;
 				result = await context_dev_post(
 					'/web/search',
 					optional_query({
-						query,
+						query: search_query,
+						numResults: limit,
 						includeDomains,
 						excludeDomains,
 						freshness,
-						timeoutMS,
-						markdownOptions: scrape_markdown
-							? { enabled: true, maxAgeMs }
+						languages: language
+							? [language.toLowerCase()]
 							: undefined,
+						timeoutMS,
+						markdownOptions: markdown_options,
+						highlightsOptions: highlights
+							? optional_query({
+									enabled: true,
+									maxCharacters: highlights_max_characters,
+								})
+							: undefined,
+						descriptionMaxCharacters: description_max_characters,
 					}),
 				);
 			}
@@ -454,6 +525,180 @@ const register_context_transaction_identify = (
 	);
 };
 
+const news_article_types = [
+	'editorial',
+	'press_release',
+	'regulatory_filing',
+	'advisory',
+] as const;
+const news_isin = /^[A-Za-z]{2}[A-Za-z0-9]{9}[0-9]$/;
+const news_ticker = /^[A-Za-z0-9.-]+$/;
+const news_date_only = /^\d{4}-\d{2}-\d{2}$/;
+
+const news_epoch_ms = (
+	value: string | undefined,
+	field: string,
+	end_of_day: boolean,
+) => {
+	if (value === undefined) return undefined;
+	const text = value.trim();
+	const ms = Date.parse(text);
+	if (!Number.isFinite(ms))
+		throw new ProviderError(
+			ErrorType.INVALID_INPUT,
+			`${field} must be an ISO 8601 date or timestamp`,
+			'context_news',
+		);
+	// A bare date ending the window covers that whole UTC day.
+	return end_of_day && news_date_only.test(text)
+		? ms + 24 * 60 * 60 * 1000 - 1
+		: ms;
+};
+
+const register_context_news = (server: McpServer<GenericSchema>) => {
+	define_legacy_tool(
+		server,
+		{
+			name: 'context_news',
+			description: tool_descriptions.context_news,
+			annotations: read_only,
+			category: 'processing',
+			provider: provider_name,
+			schema: v.object({
+				query: v.optional(
+					v.pipe(v.string(), v.minLength(2), v.maxLength(1000)),
+				),
+				company_name: v.optional(
+					v.pipe(v.string(), v.minLength(2), v.maxLength(200)),
+				),
+				domain: v.optional(
+					v.pipe(v.string(), v.minLength(1), v.maxLength(253)),
+				),
+				ticker: v.optional(
+					v.pipe(
+						v.string(),
+						v.minLength(1),
+						v.maxLength(20),
+						v.regex(news_ticker),
+					),
+				),
+				isin: v.optional(v.pipe(v.string(), v.regex(news_isin))),
+				article_type: v.optional(
+					v.pipe(
+						v.array(v.picklist(news_article_types)),
+						v.minLength(1),
+						v.maxLength(3),
+					),
+				),
+				source_domain: v.optional(
+					v.pipe(
+						v.array(
+							v.pipe(v.string(), v.minLength(1), v.maxLength(253)),
+						),
+						v.minLength(1),
+						v.maxLength(3),
+					),
+				),
+				date_from: v.optional(v.string()),
+				date_to: v.optional(v.string()),
+				sort: v.optional(v.picklist(['relevance', 'newest'])),
+				limit: v.optional(bounded_integer(100), 10),
+				cursor: v.optional(
+					v.pipe(v.string(), v.minLength(1), v.maxLength(300)),
+				),
+			}),
+		},
+		async ({
+			query,
+			company_name,
+			domain,
+			ticker,
+			isin,
+			article_type,
+			source_domain,
+			date_from,
+			date_to,
+			sort,
+			limit,
+			cursor,
+		}) => {
+			require_one('context_news', {
+				query,
+				company_name,
+				domain,
+				ticker,
+				isin,
+			});
+			if (article_type && source_domain)
+				throw new ProviderError(
+					ErrorType.INVALID_INPUT,
+					'Use only one of: article_type, source_domain',
+					'context_news',
+				);
+			const natural_language = Boolean(query?.trim());
+			if (natural_language && sort === 'newest')
+				throw new ProviderError(
+					ErrorType.INVALID_INPUT,
+					'Natural-language news is ordered by relevance; sort=newest needs a company identifier',
+					'context_news',
+				);
+			const from = news_epoch_ms(date_from, 'date_from', false);
+			const to = news_epoch_ms(date_to, 'date_to', true);
+			if (from !== undefined && to !== undefined && from > to)
+				throw new ProviderError(
+					ErrorType.INVALID_INPUT,
+					'date_from must not be after date_to',
+					'context_news',
+				);
+			if (domain?.trim())
+				validate_processing_domain(domain.trim(), 'context_news');
+			if (isin?.trim() && !news_isin.test(isin.trim()))
+				throw new ProviderError(
+					ErrorType.INVALID_INPUT,
+					'isin must be a 12-character ISIN',
+					'context_news',
+				);
+			if (ticker?.trim() && !news_ticker.test(ticker.trim()))
+				throw new ProviderError(
+					ErrorType.INVALID_INPUT,
+					'ticker contains unsupported characters',
+					'context_news',
+				);
+			const search_by = natural_language
+				? { type: 'natural_language', query: query!.trim() }
+				: {
+						type: 'entity',
+						entity: company_name?.trim()
+							? { type: 'name', name: company_name.trim() }
+							: domain?.trim()
+								? { type: 'domain', domain: domain.trim() }
+								: ticker?.trim()
+									? { type: 'ticker', ticker: ticker.trim() }
+									: { type: 'isin', isin: isin!.trim() },
+					};
+			const filter_by = optional_query({
+				articleType: article_type,
+				sourceDomain: source_domain,
+				date:
+					from !== undefined || to !== undefined
+						? optional_query({ from, to })
+						: undefined,
+			});
+			return context_dev_post(
+				'/news/search',
+				optional_query({
+					searchBy: search_by,
+					filterBy:
+						Object.keys(filter_by).length > 0 ? filter_by : undefined,
+					sortBy: sort ? { type: sort } : undefined,
+					limit,
+					cursor,
+				}),
+			);
+		},
+	);
+};
+
 export const register_context_dev_tools = (
 	server: McpServer<GenericSchema>,
 	allow: (name: string) => boolean = () => true,
@@ -468,4 +713,5 @@ export const register_context_dev_tools = (
 	if (allow('context_classify')) register_context_classify(server);
 	if (allow('context_transaction_identify'))
 		register_context_transaction_identify(server);
+	if (allow('context_news')) register_context_news(server);
 };

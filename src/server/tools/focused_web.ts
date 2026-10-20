@@ -12,6 +12,7 @@ const read_modes = {
 	tavily: 'extract',
 	exa: 'contents',
 	firecrawl: 'scrape',
+	context: 'highlights',
 } as const;
 const url_schema = v.pipe(
 	v.string(),
@@ -34,7 +35,7 @@ export const register_web_read = (
 		{
 			name: 'web_read',
 			description:
-				'Read 1-20 public URLs with basic Tavily extraction, Exa contents, or Firecrawl scraping. Returns source evidence, not synthesis. No crawl, actions, or advanced provider options.',
+				'Read 1-20 public URLs with basic Tavily extraction, Exa contents, Firecrawl scraping, or Context.dev query highlights (query required). Returns source evidence, not synthesis. No crawl, actions, or advanced provider options.',
 			annotations: {
 				readOnlyHint: true,
 				destructiveHint: false,
@@ -52,7 +53,7 @@ export const register_web_read = (
 						v.minLength(1),
 						v.maxLength(10000),
 						v.description(
-							'Query for local evidence passages and Tavily chunk reranking.',
+							'Query for local evidence passages and Tavily chunk reranking. Required for provider=context (Context.dev highlights).',
 						),
 					),
 				),
@@ -100,6 +101,11 @@ export const register_web_read = (
 					'A non-empty query is required when supplied or using chunks_per_source',
 					'web_read',
 				);
+			if (provider === 'context' && !query?.trim())
+				throw input_error(
+					'A non-empty query is required for provider=context highlights',
+					'web_read',
+				);
 			validate_processing_urls(url, 'web_read');
 			const operation = read_modes[provider];
 			const selected = get_extract_provider(provider, operation);
@@ -113,7 +119,9 @@ export const register_web_read = (
 				'basic',
 				provider === 'tavily'
 					? { query, chunks_per_source, format }
-					: undefined,
+					: provider === 'context'
+						? { query }
+						: undefined,
 			);
 			return { result, operation, urls: url, query };
 		},

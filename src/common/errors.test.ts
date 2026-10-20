@@ -300,6 +300,7 @@ describe('sanitize_query', () => {
 describe('public_error_metadata', () => {
 	it.each([
 		[ErrorType.API_ERROR, { status: 401 }, 'authentication', false],
+		[ErrorType.API_ERROR, { status: 402 }, 'entitlement', false],
 		[
 			ErrorType.ENTITLEMENT_REQUIRED,
 			{ status: 400 },

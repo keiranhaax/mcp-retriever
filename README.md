@@ -14,6 +14,14 @@ of client configs.
 Supports Tavily, Brave, Exa, You.com, SearXNG, GitHub, Linkup,
 Firecrawl, and Context.dev. Configure only what you use.
 
+Context.dev covers web search, researched answers through `ai_search`,
+news search with `context_news`, scraping, and brand tools. Its
+highlights are available in the search and read tools. Exa search adds
+a `lite` type, and Firecrawl search categories are `developer`, `gov`,
+`research`, and `pdf`. See
+[Configuration](https://github.com/keiranhaax/mcp-retriever/blob/main/docs/configuration.md#provider-notes)
+for details verified on 2026-10-19.
+
 ## Quickstart
 
 Requires **Node.js 22+** and a provider key, or your own SearXNG

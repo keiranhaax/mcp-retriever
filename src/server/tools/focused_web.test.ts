@@ -1249,3 +1249,182 @@ it('reads a URL through Tavily basic extraction with structured evidence', async
 		get_provider_health_snapshot().processing.tavily,
 	).toMatchObject({ last_runtime_status: 'ok', active_error: false });
 });
+
+const second_url = 'https://example.test/guide?version=1';
+const enable_context = () => {
+	config.processing.context_highlights.api_key = fixture_key;
+	build_server();
+};
+const respond_context = (
+	highlights: unknown = (page_url: string) => ({
+		requested: true,
+		success: true,
+		data: [`[Section] needle passage for ${page_url}`],
+	}),
+) => {
+	fetch_mock.mockImplementation(async (target, options) => {
+		expect(String(target)).toBe(
+			'https://api.context.dev/v1/web/scrape',
+		);
+		const body = JSON.parse(options.body);
+		return Response.json({
+			highlights:
+				typeof highlights === 'function'
+					? highlights(body.url)
+					: highlights,
+			markdown: { requested: false, success: null, data: null },
+			metadata: { title: 'Context fixture' },
+		});
+	});
+};
+
+it('dispatches context highlights per URL with the read query', async () => {
+	enable_context();
+	respond_context();
+	const urls = [url, second_url];
+	const response = await call('web_read', {
+		provider: 'context',
+		url: urls,
+		query: 'needle',
+	});
+	expect(response.result).toMatchObject({
+		structuredContent: { ok: true },
+	});
+	const data = parsed(response);
+	expect(data.raw_contents).toEqual(
+		urls.map((page_url) => ({
+			url: page_url,
+			content: `[Section] needle passage for ${page_url}`,
+		})),
+	);
+	expect(
+		fetch_mock.mock.calls
+			.map(([, options]) => {
+				expect(options.method).toBe('POST');
+				expect(options.headers.Authorization).toBe(
+					`Bearer ${fixture_key}`,
+				);
+				return JSON.parse(options.body);
+			})
+			.sort((a, b) => a.url.localeCompare(b.url)),
+	).toEqual(
+		[...urls].sort().map((page_url) => ({
+			url: page_url,
+			formats: { highlights: true },
+			highlightsParams: { query: 'needle', maxCharacters: 4000 },
+		})),
+	);
+	expect(
+		get_provider_health_snapshot().processing.context,
+	).toMatchObject({ last_runtime_status: 'ok', active_error: false });
+});
+
+it.each([{}, { query: '  ' }])(
+	'requires a query for context highlights before networking: %j',
+	async (missing) => {
+		enable_context();
+		respond_context();
+		const response = await call('web_read', {
+			provider: 'context',
+			url,
+			...missing,
+		});
+		expect(response.result).toMatchObject({
+			isError: true,
+			structuredContent: {
+				ok: false,
+				error: { kind: 'bad_input', retryable: false },
+			},
+		});
+		expect(fetch_mock).not.toHaveBeenCalled();
+	},
+);
+
+it('rejects Tavily controls for context before networking', async () => {
+	enable_context();
+	respond_context();
+	for (const controls of [
+		{ format: 'text' },
+		{ chunks_per_source: 1 },
+	]) {
+		const response = await call('web_read', {
+			provider: 'context',
+			url,
+			query: 'needle',
+			...controls,
+		});
+		expect(response.result).toMatchObject({
+			isError: true,
+			structuredContent: { ok: false, error: { kind: 'bad_input' } },
+		});
+	}
+	expect(fetch_mock).not.toHaveBeenCalled();
+});
+
+it('rejects unsafe URLs for context before networking', async () => {
+	enable_context();
+	respond_context();
+	for (const target of [
+		'http://localhost/',
+		'http://169.254.169.254/',
+		'https://user:PRIVATE_URL_CANARY@example.test/',
+		[url, 'context-result-id'],
+	]) {
+		const response = await call('web_read', {
+			provider: 'context',
+			url: target,
+			query: 'needle',
+		});
+		expect(response.result).toMatchObject({
+			isError: true,
+			structuredContent: { ok: false, error: { kind: 'bad_input' } },
+		});
+		expect(JSON.stringify(response)).not.toContain(
+			'PRIVATE_URL_CANARY',
+		);
+	}
+	expect(fetch_mock).not.toHaveBeenCalled();
+});
+
+it('reports unusable context highlights as an error without leaking the key', async () => {
+	enable_context();
+	respond_context({
+		requested: true,
+		success: false,
+		data: null,
+		error_code: 'WEBSITE_BLOCKED',
+	});
+	const response = await call('web_read', {
+		provider: 'context',
+		url,
+		query: 'needle',
+	});
+	expect(response.result).toMatchObject({
+		isError: true,
+		structuredContent: { ok: false },
+	});
+	expect(JSON.stringify(response)).not.toContain(fixture_key);
+	expect(fetch_mock).toHaveBeenCalledTimes(1);
+});
+
+it('offers the context read provider only when Context.dev is configured', async () => {
+	const read_tool = async () =>
+		(await listing()).find((tool) => tool.name === 'web_read');
+
+	expect(
+		(await read_tool())!.inputSchema.properties.provider.enum,
+	).toEqual(['tavily']);
+
+	enable_context();
+	const tool = (await read_tool())!;
+	expect(tool.inputSchema.properties.provider.enum).toEqual([
+		'tavily',
+		'context',
+	]);
+	expect(tool.description).toContain('Context.dev');
+	expect(tool.description.length).toBeLessThanOrEqual(300);
+	expect(tool.inputSchema.required).toEqual(['provider', 'url']);
+	expect(tool.inputSchema.properties.query.description).toContain(
+		'provider=context',
+	);
+});

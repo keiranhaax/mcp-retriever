@@ -15,6 +15,7 @@ import { tool_descriptions } from './descriptions.js';
 // Concrete provider imports
 import { config } from '../../config/env.js';
 import { BraveSearchProvider } from '../../providers/search/brave/index.js';
+import { ContextSearchProvider } from '../../providers/search/context/index.js';
 import { ExaSearchProvider } from '../../providers/search/exa/index.js';
 import {
 	TavilySearchProvider,
@@ -31,6 +32,7 @@ export type WebSearchProviderName =
 	| 'brave'
 	| 'exa'
 	| 'you'
+	| 'context'
 	| 'searxng';
 
 const providers = new Map<string, SearchProvider>();
@@ -45,6 +47,8 @@ export const initialize_web_search = (): boolean => {
 		providers.set('exa', new ExaSearchProvider());
 	if (is_api_key_valid(config.search.you.api_key, 'you'))
 		providers.set('you', new YouSearchProvider());
+	if (is_api_key_valid(config.search.context_dev.api_key, 'context'))
+		providers.set('context', new ContextSearchProvider());
 	// Keyless and off by default: only an operator-set URL enables it.
 	if (searxng_base_url())
 		providers.set('searxng', new SearxngSearchProvider());
@@ -100,7 +104,7 @@ export const register_web_search = (
 						v.minValue(1),
 						v.maxValue(100),
 						v.description(
-							'Maximum results. Tavily max 20; Brave/You cap at 20; Exa max 100. Defaults are provider-specific.',
+							'Maximum results. Tavily max 20; Brave/You cap at 20; Exa and Context.dev max 100. Defaults are provider-specific.',
 						),
 					),
 				),
@@ -124,12 +128,13 @@ export const register_web_search = (
 							'instant',
 							'fast',
 							'auto',
+							'lite',
 							'deep-lite',
 							'deep',
 							'deep-reasoning',
 						]),
 						v.description(
-							'Exa search type. Only used when provider is exa.',
+							'Exa search type. Default auto. lite is cheapest and cache-only with a restricted parameter set; instant, fast and deep-reasoning are legacy. Only used when provider is exa.',
 						),
 					),
 				),

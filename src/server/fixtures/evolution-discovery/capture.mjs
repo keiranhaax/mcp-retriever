@@ -102,12 +102,12 @@ const keys = [
 	'CONTEXT_DEV_API_KEY',
 ];
 const profiles = [
-	{ name: 'all-providers', enabled: keys, count: 14, workflow: true },
+	{ name: 'all-providers', enabled: keys, count: 15, workflow: true },
 	{ name: 'no-providers', enabled: [], count: 1 },
 	{
 		name: 'no-github',
 		enabled: keys.filter((key) => key !== 'GITHUB_API_KEY'),
-		count: 13,
+		count: 14,
 		workflow: true,
 	},
 	{

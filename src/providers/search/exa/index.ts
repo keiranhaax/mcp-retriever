@@ -8,6 +8,8 @@ import {
 import { set_response_metadata } from '../../../common/response_metadata.js';
 import {
 	BaseSearchParams,
+	ErrorType,
+	ProviderError,
 	SearchProvider,
 	SearchResult,
 } from '../../../common/types.js';
@@ -50,7 +52,70 @@ const exa_search_response_schema = v.object({
 	),
 	output: v.optional(v.unknown()),
 	costDollars: v.optional(v.unknown()),
+	warnings: v.optional(v.unknown()),
+	notices: v.optional(v.unknown()),
 });
+
+const MAX_NOTICES = 10;
+const MAX_NOTICE_LENGTH = 500;
+
+// Exa warnings and notices describe how results were produced. Entries
+// may be strings or objects, so coerce defensively and bound the size.
+const sanitize_exa_notes = (value: unknown): string[] => {
+	if (!Array.isArray(value)) return [];
+	const notes: string[] = [];
+	for (const entry of value) {
+		let text: string | undefined;
+		if (typeof entry === 'string') {
+			text = entry;
+		} else if (entry !== null && typeof entry === 'object') {
+			const message = (entry as { message?: unknown }).message;
+			if (typeof message === 'string') {
+				text = message;
+			} else {
+				try {
+					text = JSON.stringify(entry);
+				} catch {
+					text = undefined;
+				}
+			}
+		}
+		text = text?.trim();
+		if (!text) continue;
+		notes.push(text.slice(0, MAX_NOTICE_LENGTH));
+		if (notes.length >= MAX_NOTICES) break;
+	}
+	return notes;
+};
+
+const LITE_CONTENT_KEYS = new Set([
+	'text',
+	'highlights',
+	'snapshotAsOf',
+]);
+
+// Exa lite serves cached content with a restricted parameter set and
+// answers anything else with HTTP 400. Fail locally and name the
+// parameter instead of silently dropping it.
+const validate_lite_params = (params: BaseSearchParams): void => {
+	if (params.search_type !== 'lite') return;
+	const unsupported: string[] = [];
+	if (params.additional_queries?.length)
+		unsupported.push('additional_queries');
+	if (params.output_schema) unsupported.push('output_schema');
+	if (params.system_prompt) unsupported.push('system_prompt');
+	for (const key of Object.keys(params.contents ?? {})) {
+		if (!LITE_CONTENT_KEYS.has(key))
+			unsupported.push(`contents.${key}`);
+	}
+	if (unsupported.length === 0) return;
+	throw new ProviderError(
+		ErrorType.INVALID_INPUT,
+		`Exa lite search does not support: ${unsupported.join(', ')}`,
+		'exa',
+		{ retryable: false },
+	);
+};
 
 const build_contents = (params: BaseSearchParams) => {
 	return params.contents
@@ -61,6 +126,7 @@ const build_contents = (params: BaseSearchParams) => {
 const build_search_body = (
 	params: BaseSearchParams,
 ): ExaSearchRequest => {
+	validate_lite_params(params);
 	const request_body: ExaSearchRequest = {
 		query: sanitize_query(params.query),
 		type: params.search_type ?? 'auto',
@@ -114,6 +180,8 @@ export class ExaSearchProvider implements SearchProvider {
 			(data) => {
 				const controls = sanitize_exa_control_metadata(data);
 				const output = sanitize_exa_output(data.output);
+				const provider_warnings = sanitize_exa_notes(data.warnings);
+				const provider_notices = sanitize_exa_notes(data.notices);
 				const results: SearchResult[] = (data.results ?? []).map(
 					(result) => ({
 						title: result.title || result.url || 'Untitled result',
@@ -129,6 +197,12 @@ export class ExaSearchProvider implements SearchProvider {
 							highlights: result.highlights,
 							...controls,
 							output,
+							...(provider_warnings.length > 0 && {
+								provider_warnings,
+							}),
+							...(provider_notices.length > 0 && {
+								provider_notices,
+							}),
 						},
 					}),
 				);

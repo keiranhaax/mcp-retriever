@@ -56,10 +56,12 @@ export interface ExaControlMetadata {
 
 const exa_search_types = new Set([
 	'auto',
+	'lite',
 	'neural',
 	'keyword',
 	'fast',
 	'instant',
+	'deep-lite',
 	'deep',
 	'deep-reasoning',
 ]);

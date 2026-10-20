@@ -35,6 +35,7 @@ const routing_contracts = [
 	{ name: 'context_styleguide', words: ['Design'] },
 	{ name: 'context_classify', words: ['Business'] },
 	{ name: 'context_transaction_identify', words: ['Transactions'] },
+	{ name: 'context_news', words: ['News'] },
 ] as const;
 
 const search_keys = ['tavily', 'brave', 'exa', 'you'] as const;
@@ -51,6 +52,7 @@ const ai_search_keys = [
 	'linkup',
 	'brave_answers',
 	'tavily_research',
+	'context_answers',
 ] as const;
 const original_ai_search_keys = Object.fromEntries(
 	ai_search_keys.map((provider) => [
@@ -125,8 +127,8 @@ describe('Retriever tool descriptions', () => {
 		}
 	});
 
-	it('keeps exactly 13 routed MCP tool names', () => {
-		expect(Object.keys(tool_descriptions)).toHaveLength(13);
+	it('keeps exactly 14 routed MCP tool names', () => {
+		expect(Object.keys(tool_descriptions)).toHaveLength(14);
 	});
 });
 

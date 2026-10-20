@@ -35,6 +35,7 @@ const all_tool_names = [
 	'brave_news_search',
 	'context_brand_intel',
 	'context_classify',
+	'context_news',
 	'context_styleguide',
 	'context_transaction_identify',
 	'context_web_extract',

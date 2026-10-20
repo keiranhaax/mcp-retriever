@@ -246,6 +246,15 @@ export const http_json = async <T = any>(
 					provider,
 					details,
 				);
+			case 402:
+				// Credit exhaustion or a missing plan. Retrying cannot
+				// help, and the body is deliberately not echoed.
+				throw new ProviderError(
+					ErrorType.API_ERROR,
+					'Provider credits exhausted or payment required',
+					provider,
+					details,
+				);
 			case 403:
 				throw new ProviderError(
 					ErrorType.ENTITLEMENT_REQUIRED,

@@ -272,6 +272,7 @@ export const public_error_metadata = (
 					case 401:
 						metadata.kind = 'authentication';
 						break;
+					case 402:
 					case 403:
 						metadata.kind = 'entitlement';
 						break;
@@ -359,6 +360,7 @@ const safe_messages = new Set([
 	...Object.values(local_fetch_messages),
 	'Cannot retain complete canonical result; no evidence was returned',
 	'Invalid API key',
+	'Provider credits exhausted or payment required',
 	'Network request failed',
 	'Operation timed out',
 	'Operation cancelled',

@@ -255,6 +255,207 @@ describe('ExaSearchProvider', () => {
 		});
 	});
 
+	it('sends only allowed parameters for lite search', async () => {
+		fetch_mock.mockResolvedValue(
+			new Response(JSON.stringify({ results: [] }), {
+				status: 200,
+				headers: { 'Content-Type': 'application/json' },
+			}),
+		);
+
+		await new ExaSearchProvider().search({
+			query: 'cached docs',
+			limit: 3,
+			search_type: 'lite',
+			include_domains: ['example.com'],
+			exclude_domains: ['spam.example'],
+			category: 'news',
+			user_location: 'US',
+			contents: {
+				highlights: true,
+				text: { maxCharacters: 500 },
+				snapshotAsOf: '2026-01-01T00:00:00.000Z',
+			},
+		});
+
+		const body = JSON.parse(fetch_mock.mock.calls[0][1].body);
+		expect(body).toEqual({
+			query: 'cached docs',
+			type: 'lite',
+			numResults: 3,
+			includeDomains: ['example.com'],
+			excludeDomains: ['spam.example'],
+			category: 'news',
+			userLocation: 'US',
+			contents: {
+				highlights: true,
+				text: { maxCharacters: 500 },
+				snapshotAsOf: '2026-01-01T00:00:00.000Z',
+			},
+		});
+	});
+
+	it('keeps the default text contents for lite search', async () => {
+		fetch_mock.mockResolvedValue(
+			new Response(JSON.stringify({ results: [] }), { status: 200 }),
+		);
+
+		await new ExaSearchProvider().search({
+			query: 'cached docs',
+			search_type: 'lite',
+		});
+
+		const body = JSON.parse(fetch_mock.mock.calls[0][1].body);
+		expect(body).toEqual({
+			query: 'cached docs',
+			type: 'lite',
+			numResults: 10,
+			contents: { text: { maxCharacters: 1500 } },
+		});
+	});
+
+	it.each([
+		['output_schema', { output_schema: { type: 'object' } }],
+		['additional_queries', { additional_queries: ['funding'] }],
+		['system_prompt', { system_prompt: 'Be brief.' }],
+		['contents.summary', { contents: { summary: true } }],
+		['contents.livecrawl', { contents: { livecrawl: 'always' } }],
+	])(
+		'rejects %s for lite search before calling Exa',
+		async (parameter, extra) => {
+			await expect(
+				new ExaSearchProvider().search({
+					query: 'cached docs',
+					search_type: 'lite',
+					...extra,
+				}),
+			).rejects.toMatchObject({
+				type: 'INVALID_INPUT',
+				provider: 'exa',
+				details: { retryable: false },
+				message: expect.stringContaining(parameter),
+			});
+			expect(fetch_mock).not.toHaveBeenCalled();
+		},
+	);
+
+	it('names every unsupported lite parameter in one error', async () => {
+		await expect(
+			new ExaSearchProvider().search({
+				query: 'cached docs',
+				search_type: 'lite',
+				output_schema: { type: 'object' },
+				system_prompt: 'Be brief.',
+			}),
+		).rejects.toMatchObject({
+			type: 'INVALID_INPUT',
+			message: expect.stringMatching(/output_schema.*system_prompt/),
+		});
+		expect(fetch_mock).not.toHaveBeenCalled();
+	});
+
+	it('still allows lite-restricted parameters on other search types', async () => {
+		fetch_mock.mockResolvedValue(
+			new Response(JSON.stringify({ results: [] }), { status: 200 }),
+		);
+
+		await new ExaSearchProvider().search({
+			query: 'deep research',
+			search_type: 'deep',
+			system_prompt: 'Be brief.',
+			contents: { summary: true },
+		});
+
+		const body = JSON.parse(fetch_mock.mock.calls[0][1].body);
+		expect(body).toMatchObject({
+			type: 'deep',
+			systemPrompt: 'Be brief.',
+			contents: { summary: true },
+		});
+	});
+
+	it('surfaces Exa notices and warnings in result metadata', async () => {
+		fetch_mock.mockResolvedValue(
+			new Response(
+				JSON.stringify({
+					notices: [
+						'site: operator matched nothing and was dropped',
+						{ message: 'Results came from cache' },
+						{ code: 'x', detail: 'no message field' },
+						{ message: 'y'.repeat(2000) },
+						'',
+						42,
+					],
+					warnings: ['contents.livecrawl was ignored'],
+					results: [
+						{ url: 'https://example.com/a', text: 'first' },
+						{ url: 'https://example.com/b', text: 'second' },
+					],
+				}),
+				{ status: 200 },
+			),
+		);
+
+		const results = await new ExaSearchProvider().search({
+			query: 'notices',
+		});
+
+		for (const result of results) {
+			expect(result.metadata?.provider_warnings).toEqual([
+				'contents.livecrawl was ignored',
+			]);
+			expect(result.metadata?.provider_notices).toEqual([
+				'site: operator matched nothing and was dropped',
+				'Results came from cache',
+				JSON.stringify({ code: 'x', detail: 'no message field' }),
+				'y'.repeat(500),
+			]);
+		}
+	});
+
+	it('caps the number of surfaced notices', async () => {
+		fetch_mock.mockResolvedValue(
+			new Response(
+				JSON.stringify({
+					notices: Array.from({ length: 50 }, (_, i) => `note ${i}`),
+					results: [{ url: 'https://example.com', text: 'source' }],
+				}),
+				{ status: 200 },
+			),
+		);
+
+		const [result] = await new ExaSearchProvider().search({
+			query: 'many notices',
+		});
+
+		expect(result.metadata?.provider_notices).toHaveLength(10);
+		expect(result.metadata?.provider_warnings).toBeUndefined();
+	});
+
+	it.each(['a string', { message: 'not an array' }, null])(
+		'ignores malformed notices and warnings: %j',
+		async (value) => {
+			fetch_mock.mockResolvedValue(
+				new Response(
+					JSON.stringify({
+						notices: value,
+						warnings: value,
+						results: [{ url: 'https://example.com', text: 'source' }],
+					}),
+					{ status: 200 },
+				),
+			);
+
+			const [result] = await new ExaSearchProvider().search({
+				query: 'malformed notices',
+			});
+
+			expect(result.snippet).toBe('source');
+			expect(result.metadata?.provider_notices).toBeUndefined();
+			expect(result.metadata?.provider_warnings).toBeUndefined();
+		},
+	);
+
 	it('does not require resolvedSearchType or score in responses', async () => {
 		fetch_mock.mockResolvedValue(
 			new Response(

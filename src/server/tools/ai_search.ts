@@ -34,6 +34,7 @@ import { describe_ai_search } from './descriptions.js';
 import { ExaAnswerProvider } from '../../providers/ai_response/exa_answer/index.js';
 import { ExaDeepResearchProvider } from '../../providers/ai_response/exa_deep_research/index.js';
 import { LinkupProvider } from '../../providers/ai_response/linkup/index.js';
+import { ContextAnswersProvider } from '../../providers/ai_response/context_answers/index.js';
 import { BraveAnswersProvider } from '../../providers/ai_response/brave_answers/index.js';
 import {
 	TavilyResearchProvider,
@@ -44,6 +45,7 @@ export type AISearchProviderName =
 	| 'exa_answer'
 	| 'exa_deep_research'
 	| 'linkup'
+	| 'context_answers'
 	| 'brave_answers'
 	| 'tavily_research';
 
@@ -67,6 +69,13 @@ export const initialize_ai_search = (): boolean => {
 		providers.set('exa_deep_research', new ExaDeepResearchProvider());
 	if (is_api_key_valid(config.ai_response.linkup.api_key, 'linkup'))
 		providers.set('linkup', new LinkupProvider());
+	if (
+		is_api_key_valid(
+			config.ai_response.context_answers.api_key,
+			'context_answers',
+		)
+	)
+		providers.set('context_answers', new ContextAnswersProvider());
 	if (
 		is_api_key_valid(
 			config.ai_response.brave_answers.api_key,
@@ -160,7 +169,23 @@ export const register_ai_search = (
 					v.pipe(
 						v.picklist(['deep', 'deep-reasoning']),
 						v.description(
-							'Exa deep search mode. Only used when provider is exa_deep_research.',
+							'Exa deep search mode; deep-reasoning is legacy per Exa. Only used when provider is exa_deep_research.',
+						),
+					),
+				),
+				context_mode: v.optional(
+					v.pipe(
+						v.picklist(['fast', 'ultra']),
+						v.description(
+							'Context.dev Answers mode: fast (default, 10 credits) or ultra (100 credits, deeper research). Only used when provider is context_answers.',
+						),
+					),
+				),
+				json_format: v.optional(
+					v.pipe(
+						v.record(v.string(), v.any()),
+						v.description(
+							'Example JSON object shaping the answer. Only used when provider is context_answers.',
 						),
 					),
 				),
@@ -183,6 +208,8 @@ export const register_ai_search = (
 			limit,
 			output_schema,
 			exa_deep_search_type,
+			context_mode,
+			json_format,
 			system_prompt,
 		}) => {
 			const started = performance.now();
@@ -238,6 +265,8 @@ export const register_ai_search = (
 								output_schema,
 								search_type: exa_deep_search_type,
 								system_prompt,
+								context_mode,
+								json_format,
 							} as any);
 				if (provider !== 'tavily_research')
 					throw_if_aborted(get_request_signal());

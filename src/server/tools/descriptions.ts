@@ -16,7 +16,7 @@ export const tool_descriptions = {
 	firecrawl_agent:
 		'Autonomous Web Agent: Credit-sensitive; start a web task (default cap 100 credits), then use action=status or cancel with job_id. Repeating start creates a new paid job. Prefer search/extract for simple tasks.',
 	context_web_extract:
-		'Context.dev Web: scrape markdown/HTML/images/screenshots, crawl pages, get sitemaps, or web-search with optional markdown scraping.',
+		'Context.dev Web: scrape markdown/HTML/images/screenshots, crawl pages, get sitemaps, map site URLs by topic (mode=map), or web-search (mode=web_search; limit sets result count) with optional query-relevant highlights, language filter, and markdown.',
 	context_brand_intel:
 		'Context.dev Brand: retrieve brand/company intelligence such as logos, colors, socials, descriptions, industries, and domain/company/ticker matches.',
 	context_styleguide:
@@ -25,6 +25,8 @@ export const tool_descriptions = {
 		'Context.dev Business: classify companies by NAICS, SIC, or EIC using domain or company name.',
 	context_transaction_identify:
 		'Context.dev Transactions: identify messy bank/card transaction descriptors as real brands or companies.',
+	context_news:
+		'Context.dev News: search news by natural-language query, or get company-keyed news by name, domain, ticker, or ISIN. Filter by article type, publisher, and date window; page with cursor.',
 } as const;
 
 export type RetrieverToolName = keyof typeof tool_descriptions;
@@ -54,6 +56,11 @@ export const describe_ai_search = (
 	}
 	if (available.has('linkup')) {
 		hints.push('Linkup for sourced answers');
+	}
+	if (available.has('context_answers')) {
+		hints.push(
+			'Context.dev Answers for researched JSON with source URLs (context_mode fast=10 credits, ultra=100)',
+		);
 	}
 	const use = hints.length ? ` Use ${hints.join(', ')}.` : '';
 	return `Answer/Research: get synthesized answers; citation availability depends on the provider.${use}`;

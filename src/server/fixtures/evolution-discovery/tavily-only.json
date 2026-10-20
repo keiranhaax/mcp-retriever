@@ -62,7 +62,7 @@
 					"type": "integer",
 					"minimum": 1,
 					"maximum": 100,
-					"description": "Maximum results. Tavily max 20; Brave/You cap at 20; Exa max 100. Defaults are provider-specific."
+					"description": "Maximum results. Tavily max 20; Brave/You cap at 20; Exa and Context.dev max 100. Defaults are provider-specific."
 				},
 				"include_domains": {
 					"type": "array",
@@ -87,12 +87,13 @@
 						"instant",
 						"fast",
 						"auto",
+						"lite",
 						"deep-lite",
 						"deep",
 						"deep-reasoning"
 					],
 					"type": "string",
-					"description": "Exa search type. Only used when provider is exa."
+					"description": "Exa search type. Default auto. lite is cheapest and cache-only with a restricted parameter set; instant, fast and deep-reasoning are legacy. Only used when provider is exa."
 				},
 				"category": {
 					"enum": [
@@ -197,7 +198,20 @@
 				"exa_deep_search_type": {
 					"enum": ["deep", "deep-reasoning"],
 					"type": "string",
-					"description": "Exa deep search mode. Only used when provider is exa_deep_research."
+					"description": "Exa deep search mode; deep-reasoning is legacy per Exa. Only used when provider is exa_deep_research."
+				},
+				"context_mode": {
+					"enum": ["fast", "ultra"],
+					"type": "string",
+					"description": "Context.dev Answers mode: fast (default, 10 credits) or ultra (100 credits, deeper research). Only used when provider is context_answers."
+				},
+				"json_format": {
+					"type": "object",
+					"propertyNames": {
+						"type": "string"
+					},
+					"additionalProperties": {},
+					"description": "Example JSON object shaping the answer. Only used when provider is context_answers."
 				},
 				"system_prompt": {
 					"type": "string",
@@ -243,12 +257,12 @@
 					"type": "string",
 					"minLength": 1,
 					"maxLength": 10000,
-					"description": "Search query (required when mode=search with Firecrawl). Also used by Tavily extract for chunk reranking."
+					"description": "Search query (required when mode=search with Firecrawl). Also used by Tavily extract for chunk reranking, and required by Context.dev highlights as the relevance query."
 				},
 				"provider": {
 					"enum": ["tavily"],
 					"type": "string",
-					"description": "Provider to use: Firecrawl for scrape/summarize/crawl/map/extract/actions/search, Exa for contents/similar, Tavily for extraction."
+					"description": "Provider to use: Firecrawl for scrape/summarize/crawl/map/extract/actions/search, Exa for contents/similar, Tavily for extraction, Context for highlights/markdown."
 				},
 				"mode": {
 					"enum": [
@@ -260,10 +274,12 @@
 						"actions",
 						"search",
 						"contents",
-						"similar"
+						"similar",
+						"highlights",
+						"markdown"
 					],
 					"type": "string",
-					"description": "Provider mode. firecrawl supports scrape/summarize/crawl/map/extract/actions/search; exa supports contents/similar; tavily supports extract. Defaults to provider default."
+					"description": "Provider mode. firecrawl supports scrape/summarize/crawl/map/extract/actions/search; exa supports contents/similar; tavily supports extract; context supports highlights (needs query) and markdown. Defaults to provider default."
 				},
 				"extract_depth": {
 					"enum": ["basic", "advanced"],
@@ -391,11 +407,11 @@
 						"categories": {
 							"type": "array",
 							"items": {
-								"enum": ["github", "research", "pdf"],
+								"enum": ["developer", "gov", "research", "pdf"],
 								"type": "string"
 							},
-							"maxItems": 3,
-							"description": "Firecrawl search categories for narrowed retrieval."
+							"maxItems": 4,
+							"description": "Firecrawl search categories for narrowed retrieval. developer: issues, merged PRs, READMEs, and documentation sites. gov: US government legal and regulatory sources."
 						},
 						"includeDomains": {
 							"type": "array",

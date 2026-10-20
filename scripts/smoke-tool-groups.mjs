@@ -12,6 +12,7 @@ const names = {
 		'ai_search',
 		'brave_llm_context',
 		'brave_news_search',
+		'context_news',
 		'github_search',
 		'search_and_read',
 		'web_read',

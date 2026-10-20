@@ -299,7 +299,8 @@ export const PROVIDERS: readonly ProviderSpec[] = [
 		name: 'Context.dev',
 		env: 'CONTEXT_DEV_API_KEY',
 		kind: 'key',
-		unlocks: 'scraping, brand intel, style guides, classification',
+		unlocks:
+			'search, answers, news, scraping, brand intel, style guides, classification',
 		signup: 'https://www.context.dev',
 	},
 	{

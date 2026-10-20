@@ -185,6 +185,7 @@ it('research-only omits mixed-purpose and other groups from discovery and direct
 	const names = await discover(server);
 	expect(names).toContain('web_search');
 	expect(names).toContain('search_and_read');
+	expect(names).toContain('context_news');
 	for (const name of [
 		'web_extract',
 		'context_web_extract',

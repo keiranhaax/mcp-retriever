@@ -162,3 +162,24 @@ This task also preserves local Firecrawl summary replacement, provider
 dispatch, tool names, all schemas outside the Exa category correction,
 remote pagination, URL/provider validation, runtime hardening, and the
 bounded result store.
+
+## Provider updates verified 2026-10-19
+
+The audit and non-goals above record the 2026-08-14 decisions and are
+kept as dated evidence. Later source changes supersede these
+decisions; the current behavior is in
+[Configuration](configuration.md#provider-notes).
+
+- **Firecrawl `developer` category:** rejected as a non-goal above.
+  Search categories are now `developer`, `gov`, `research`, and `pdf`;
+  `github` is removed.
+- **Firecrawl `research` category:** kept above as a web filter.
+  `data.research` paper records are now parsed ahead of Firecrawl's
+  2026-11-16 change to the category.
+- **Exa search types:** `lite` is accepted, and `instant`, `fast`, and
+  `deep-reasoning` are documented as legacy. Warnings and notices
+  surface as response metadata.
+- **New tools and provider surface:** rejected for that audit.
+  `context_news` and the `context_answers` `ai_search` provider are
+  now registered under `CONTEXT_DEV_API_KEY`.
+- **HTTP 402:** now classified as credits exhausted and not retried.

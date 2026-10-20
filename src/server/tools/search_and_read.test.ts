@@ -371,6 +371,144 @@ it('does not advertise an extraction provider that only has a non-read mode', as
 	).toEqual(['tavily']);
 });
 
+it('offers context for both pickers only when Context.dev is configured', async () => {
+	const pickers = async () => {
+		const response: any = await server.receive({
+			jsonrpc: '2.0',
+			id: ++sequence,
+			method: 'tools/list',
+			params: {},
+		});
+		const workflow = response.result.tools.find(
+			(t: any) => t.name === 'search_and_read',
+		);
+		return {
+			search: workflow.inputSchema.properties.search_provider.enum,
+			extract: workflow.inputSchema.properties.extract_provider.enum,
+		};
+	};
+	expect(await pickers()).toEqual({
+		search: ['tavily'],
+		extract: ['tavily'],
+	});
+
+	config.search.context_dev.api_key = 'workflow-fixture-key';
+	config.processing.context_highlights.api_key =
+		'workflow-fixture-key';
+	server = create_server({ name: 'workflow-offline', version: '1' });
+	expect(await pickers()).toEqual({
+		search: ['tavily', 'context'],
+		extract: ['tavily', 'context'],
+	});
+});
+
+it('searches and reads through Context.dev using the query for highlights', async () => {
+	config.search.context_dev.api_key = 'workflow-fixture-key';
+	config.processing.context_highlights.api_key =
+		'workflow-fixture-key';
+	server = create_server({ name: 'workflow-offline', version: '1' });
+	const requests: Array<{ path: string; body: any }> = [];
+	fetch_mock.mockImplementation(async (target, options) => {
+		const url = new URL(String(target));
+		const body = JSON.parse(options.body);
+		requests.push({ path: url.pathname, body });
+		expect(url.hostname).toBe('api.context.dev');
+		if (url.pathname === '/v1/web/search')
+			return Response.json({
+				results: [
+					{
+						url: first,
+						title: 'Result 0',
+						description: 'plain description',
+						highlights: {
+							code: 'SUCCESS',
+							highlights: ['search passage'],
+						},
+					},
+				],
+			});
+		expect(url.pathname).toBe('/v1/web/scrape');
+		return Response.json({
+			highlights: {
+				requested: true,
+				success: true,
+				data: ['read passage about needle'],
+			},
+			markdown: { requested: false, success: null, data: null },
+			metadata: { title: 'Report' },
+		});
+	});
+	const result = parsed(
+		await call('search_and_read', {
+			...args,
+			search_provider: 'context',
+			extract_provider: 'context',
+			max_sources: 1,
+		}),
+	);
+
+	expect(result.sources[0]).toMatchObject({
+		status: 'ok',
+		url: first,
+		search_provider: 'context',
+		extract_provider: 'context',
+	});
+	expect(result.sources[0].content).toContain(
+		'read passage about needle',
+	);
+	expect(result.metadata.http_requests).toBe(2);
+	expect(requests.map((item) => item.path)).toEqual([
+		'/v1/web/search',
+		'/v1/web/scrape',
+	]);
+	expect(requests[0].body).toMatchObject({
+		query: 'needle',
+		numResults: 5,
+	});
+	expect(requests[1].body).toEqual({
+		url: first,
+		formats: { highlights: true },
+		highlightsParams: { query: 'needle', maxCharacters: 4000 },
+	});
+});
+
+it('reads with Context.dev highlights after a different search provider', async () => {
+	config.processing.context_highlights.api_key =
+		'workflow-fixture-key';
+	server = create_server({ name: 'workflow-offline', version: '1' });
+	respond([first]);
+	const ordinary = fetch_mock.getMockImplementation()!;
+	fetch_mock.mockImplementation(async (target, options) => {
+		const url = new URL(String(target));
+		if (url.hostname === 'api.tavily.com')
+			return ordinary(target, options);
+		expect(url.pathname).toBe('/v1/web/scrape');
+		return Response.json({
+			highlights: {
+				requested: true,
+				success: true,
+				data: ['mixed provider passage'],
+			},
+		});
+	});
+	const result = parsed(
+		await call('search_and_read', {
+			...args,
+			extract_provider: 'context',
+			max_sources: 1,
+		}),
+	);
+
+	expect(result.sources[0]).toMatchObject({
+		status: 'ok',
+		search_provider: 'tavily',
+		extract_provider: 'context',
+	});
+	expect(result.sources[0].content).toContain(
+		'mixed provider passage',
+	);
+});
+
 it('reports intentional source-limit omissions without claiming all hits were read', async () => {
 	respond([first, first, second, 'https://example.test/third']);
 	const data = parsed(

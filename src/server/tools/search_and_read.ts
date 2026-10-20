@@ -42,7 +42,10 @@ const modes: Record<string, string> = {
 	tavily: 'extract',
 	exa: 'contents',
 	firecrawl: 'scrape',
+	context: 'highlights',
 };
+// Context.dev highlights need a relevance query; its limit is 2000.
+const HIGHLIGHT_QUERY_CHARS = 2000;
 // Matches the per-provider slot limit; more would only queue in http.ts.
 const READ_CONCURRENCY = 4;
 const workflow_output_schema: v.GenericSchema<{
@@ -250,6 +253,13 @@ export const register_search_and_read = (
 								const extracted = await extract.process_content(
 									source.url!,
 									'basic',
+									extract_provider === 'context'
+										? {
+												query: query
+													.trim()
+													.slice(0, HIGHLIGHT_QUERY_CHARS),
+											}
+										: undefined,
 								);
 								source.content = extracted.content;
 								// Provider metadata only: the page text is already in

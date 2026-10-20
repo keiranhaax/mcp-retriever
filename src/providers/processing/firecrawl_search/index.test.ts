@@ -216,7 +216,7 @@ describe('FirecrawlSearchProvider', () => {
 			{
 				limit: 7,
 				sources: ['web', 'images', 'news'],
-				categories: ['github', 'research'],
+				categories: ['developer', 'research'],
 				country: 'US',
 				location: 'San Francisco,California,United States',
 				tbs: 'qdr:w',
@@ -230,7 +230,7 @@ describe('FirecrawlSearchProvider', () => {
 		expect(body).toMatchObject({
 			limit: 7,
 			sources: ['web', 'images', 'news'],
-			categories: ['github', 'research'],
+			categories: ['developer', 'research'],
 			country: 'US',
 			location: 'San Francisco,California,United States',
 			tbs: 'qdr:w',
@@ -306,6 +306,155 @@ describe('FirecrawlSearchProvider', () => {
 			images: 0,
 			news: 0,
 		});
+	});
+
+	it('sends developer and gov categories in the request body', async () => {
+		fetch_mock.mockImplementation(
+			async () =>
+				new Response(
+					JSON.stringify({
+						success: true,
+						data: {
+							web: [
+								{
+									url: 'https://example.com/issue',
+									description: 'Issue text',
+									category: 'developer',
+								},
+							],
+						},
+					}),
+				),
+		);
+
+		await new FirecrawlSearchProvider().process_content(
+			'client bug',
+			'basic',
+			{ categories: ['developer'] },
+		);
+		expect(
+			JSON.parse(fetch_mock.mock.calls.at(-1)![1].body).categories,
+		).toEqual(['developer']);
+
+		await new FirecrawlSearchProvider().process_content(
+			'privacy statute',
+			'basic',
+			{ categories: ['gov'] },
+		);
+		expect(
+			JSON.parse(fetch_mock.mock.calls.at(-1)![1].body).categories,
+		).toEqual(['gov']);
+	});
+
+	it('normalizes research index paper records into results', async () => {
+		fetch_mock.mockResolvedValue(
+			new Response(
+				JSON.stringify({
+					success: true,
+					data: {
+						research: [
+							{
+								paperId: 'paper-1',
+								primaryId: 'arxiv:2401.00001',
+								ids: { arxiv: '2401.00001' },
+								title: 'Retrieval Paper',
+								abstract: 'We study retrieval.',
+								score: 0.91,
+								extra_field: 'kept',
+							},
+							{
+								paperId: 'paper-2',
+								title: null,
+								abstract: null,
+								score: null,
+								url: 'https://example.com/paper-2',
+							},
+							{ title: 'Anonymous record' },
+						],
+					},
+				}),
+			),
+		);
+
+		const result =
+			await new FirecrawlSearchProvider().process_content(
+				'retrieval',
+				'basic',
+				{ categories: ['research'] },
+			);
+
+		expect(result.raw_contents).toEqual([
+			{
+				url: 'research:arxiv:2401.00001',
+				content: 'We study retrieval.',
+			},
+			{
+				url: 'https://example.com/paper-2',
+				content: 'No content extracted',
+			},
+			{
+				url: 'research:result-3',
+				content: 'No content extracted',
+			},
+		]);
+		expect(result.content).toContain('## Retrieval Paper');
+		expect(result.content).toContain(
+			'Source: research:arxiv:2401.00001',
+		);
+		expect(result.content).toContain('Score: 0.91');
+		expect(result.metadata).toMatchObject({
+			urls_processed: 3,
+			source_counts: { web: 0, images: 0, news: 0, research: 3 },
+		});
+		expect(result.metadata.documents.research).toHaveLength(3);
+		expect(result.metadata.documents.research[0]).toMatchObject({
+			paperId: 'paper-1',
+			ids: { arxiv: '2401.00001' },
+			score: 0.91,
+			extra_field: 'kept',
+		});
+		expect(result.metadata).not.toHaveProperty('provider_warnings');
+	});
+
+	it('surfaces provider warnings as bounded metadata strings', async () => {
+		fetch_mock.mockResolvedValue(
+			new Response(
+				JSON.stringify({
+					success: true,
+					warnings: [
+						'The research category will change on 2026-11-16.',
+						{ message: 'Object warning message' },
+						{ code: 'deprecated', detail: 42 },
+						'x'.repeat(2000),
+						...Array.from({ length: 20 }, (_, i) => `extra ${i}`),
+					],
+					data: {
+						web: [
+							{ url: 'https://example.com', description: 'Body' },
+						],
+					},
+				}),
+			),
+		);
+
+		const result =
+			await new FirecrawlSearchProvider().process_content(
+				'query',
+				'basic',
+				{ categories: ['research'] },
+			);
+
+		const warnings = result.metadata.provider_warnings;
+		expect(warnings).toHaveLength(10);
+		expect(warnings.slice(0, 3)).toEqual([
+			'The research category will change on 2026-11-16.',
+			'Object warning message',
+			'{"code":"deprecated","detail":42}',
+		]);
+		expect(warnings[3]).toHaveLength(500);
+		expect(
+			warnings.every((w: unknown) => typeof w === 'string'),
+		).toBe(true);
 	});
 
 	it('rejects malformed web collections without exposing payload values', async () => {

@@ -84,6 +84,11 @@ export const config = {
 			base_url: 'https://api.linkup.so/v1',
 			timeout: 30000, // 30 seconds
 		},
+		context_answers: {
+			api_key: CONTEXT_DEV_API_KEY,
+			base_url: 'https://api.context.dev/v1',
+			timeout: 60000, // ultra research budget is up to ~50 seconds
+		},
 		brave_answers: {
 			api_key: BRAVE_ANSWERS_API_KEY || BRAVE_API_KEY,
 			base_url:
@@ -165,6 +170,11 @@ export const config = {
 			base_url: FIRECRAWL_BASE_URL
 				? `${FIRECRAWL_BASE_URL}/v2/search`
 				: 'https://api.firecrawl.dev/v2/search',
+			timeout: 60000,
+		},
+		context_highlights: {
+			api_key: CONTEXT_DEV_API_KEY,
+			base_url: 'https://api.context.dev/v1',
 			timeout: 60000,
 		},
 	},

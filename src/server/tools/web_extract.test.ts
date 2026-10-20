@@ -9,6 +9,7 @@ import {
 import * as v from 'valibot';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import { FirecrawlMapProvider } from '../../providers/processing/firecrawl_map/index.js';
+import { ContextHighlightsProvider } from '../../providers/processing/context_highlights/index.js';
 import { ExaSimilarProvider } from '../../providers/processing/exa_similar/index.js';
 import { TavilyExtractProvider } from '../../providers/processing/tavily_extract/index.js';
 import { config } from '../../config/env.js';
@@ -25,6 +26,7 @@ const previous_keys = {
 	tavily: config.processing.tavily_extract.api_key,
 	exa: config.processing.exa_contents.api_key,
 	exa_similar: config.processing.exa_similar.api_key,
+	context: config.processing.context_highlights.api_key,
 };
 
 const create_server = () => {
@@ -73,6 +75,7 @@ describe('web_extract Firecrawl summarize', () => {
 		config.processing.tavily_extract.api_key = undefined;
 		config.processing.exa_contents.api_key = undefined;
 		config.processing.exa_similar.api_key = undefined;
+		config.processing.context_highlights.api_key = undefined;
 	});
 
 	afterEach(() => {
@@ -81,6 +84,8 @@ describe('web_extract Firecrawl summarize', () => {
 		config.processing.tavily_extract.api_key = previous_keys.tavily;
 		config.processing.exa_contents.api_key = previous_keys.exa;
 		config.processing.exa_similar.api_key = previous_keys.exa_similar;
+		config.processing.context_highlights.api_key =
+			previous_keys.context;
 		vi.unstubAllGlobals();
 		vi.restoreAllMocks();
 	});
@@ -236,6 +241,7 @@ describe('web_extract Firecrawl actions screenshot', () => {
 		config.processing.tavily_extract.api_key = 'tvly-test-key';
 		config.processing.exa_contents.api_key = undefined;
 		config.processing.exa_similar.api_key = undefined;
+		config.processing.context_highlights.api_key = undefined;
 	});
 
 	afterEach(() => {
@@ -246,6 +252,8 @@ describe('web_extract Firecrawl actions screenshot', () => {
 		config.processing.tavily_extract.api_key = previous_keys.tavily;
 		config.processing.exa_contents.api_key = previous_keys.exa;
 		config.processing.exa_similar.api_key = previous_keys.exa_similar;
+		config.processing.context_highlights.api_key =
+			previous_keys.context;
 		vi.unstubAllGlobals();
 		vi.restoreAllMocks();
 	});
@@ -322,4 +330,242 @@ describe('web_extract Firecrawl actions screenshot', () => {
 			expect(fetch_mock).not.toHaveBeenCalled();
 		},
 	);
+});
+
+describe('web_extract Context.dev', () => {
+	const url = 'https://example.test/pricing';
+
+	beforeEach(() => {
+		fetch_mock.mockReset();
+		vi.stubGlobal('fetch', fetch_mock);
+		config.processing.firecrawl_scrape.api_key = undefined;
+		config.processing.tavily_extract.api_key = 'tvly-test-key';
+		config.processing.exa_contents.api_key = undefined;
+		config.processing.exa_similar.api_key = undefined;
+		config.processing.context_highlights.api_key = 'ctx-test-key';
+	});
+
+	afterEach(() => {
+		config.processing.firecrawl_scrape.api_key =
+			previous_keys.firecrawl;
+		config.processing.tavily_extract.api_key = previous_keys.tavily;
+		config.processing.exa_contents.api_key = previous_keys.exa;
+		config.processing.exa_similar.api_key = previous_keys.exa_similar;
+		config.processing.context_highlights.api_key =
+			previous_keys.context;
+		vi.unstubAllGlobals();
+		vi.restoreAllMocks();
+	});
+
+	const registered = () => {
+		const { server, tools } = create_server();
+		initialize_web_extract();
+		register_web_extract(server as any);
+		return tools[0];
+	};
+	const respond_scrape = () =>
+		fetch_mock.mockImplementation(async (_target, init) => {
+			const body = JSON.parse(init.body);
+			return Response.json({
+				highlights: body.formats.highlights
+					? {
+							requested: true,
+							success: true,
+							data: [`Passage for ${body.url}`],
+						}
+					: { requested: false, success: null, data: null },
+				markdown: body.formats.markdown
+					? {
+							requested: true,
+							success: true,
+							data: `# Page ${body.url}`,
+						}
+					: { requested: false, success: null, data: null },
+				metadata: { title: 'Pricing' },
+			});
+		});
+
+	it('registers context highlights and markdown only with a Context.dev key', () => {
+		config.processing.context_highlights.api_key = undefined;
+		expect(initialize_web_extract()).toBe(true);
+		expect(get_available_providers()).toEqual(['tavily']);
+
+		config.processing.context_highlights.api_key = 'ctx-test-key';
+		const tool = registered();
+		expect(get_available_providers()).toEqual(['tavily', 'context']);
+		expect(get_provider_options(tool.definition.schema)).toEqual([
+			'tavily',
+			'context',
+		]);
+		const modes = get_mode_options(tool.definition.schema);
+		expect(modes).toContain('highlights');
+		expect(modes).toContain('markdown');
+		expect(
+			get_description(tool.definition.schema.entries.mode),
+		).toContain('context supports highlights');
+		expect(
+			get_description(tool.definition.schema.entries.query),
+		).toContain('Context.dev');
+		expect(
+			v.safeParse(tool.definition.schema, {
+				provider: 'context',
+				mode: 'highlights',
+				url,
+				query: 'pricing',
+			}).success,
+		).toBe(true);
+	});
+
+	it('forwards the query to Context.dev highlights as the relevance query', async () => {
+		const process = vi
+			.spyOn(ContextHighlightsProvider.prototype, 'process_content')
+			.mockResolvedValue({
+				content: 'passages',
+				metadata: {},
+				source_provider: 'context_highlights',
+			});
+		await registered().handler({
+			provider: 'context',
+			url,
+			query: 'pricing details',
+		});
+		expect(process).toHaveBeenCalledWith(url, undefined, {
+			query: 'pricing details',
+		});
+	});
+
+	it('defaults to highlights and sends the documented scrape body', async () => {
+		respond_scrape();
+		const response = await registered().handler({
+			provider: 'context',
+			url: [url, 'https://example.test/docs'],
+			query: 'pricing',
+		});
+
+		expect(response.isError).toBeUndefined();
+		const [target, init] = fetch_mock.mock.calls[0];
+		expect(target).toBe('https://api.context.dev/v1/web/scrape');
+		expect(init.headers.Authorization).toBe('Bearer ctx-test-key');
+		expect(fetch_mock).toHaveBeenCalledTimes(2);
+		expect(
+			fetch_mock.mock.calls
+				.map(([, call_init]) => JSON.parse(call_init.body))
+				.sort((a, b) => a.url.localeCompare(b.url)),
+		).toEqual([
+			{
+				url: 'https://example.test/docs',
+				formats: { highlights: true },
+				highlightsParams: { query: 'pricing', maxCharacters: 4000 },
+			},
+			{
+				url,
+				formats: { highlights: true },
+				highlightsParams: { query: 'pricing', maxCharacters: 4000 },
+			},
+		]);
+		const result = JSON.parse(response.content[0].text);
+		expect(result.source_provider).toBe('context_highlights');
+		expect(result.raw_contents).toEqual([
+			{ url, content: `Passage for ${url}` },
+			{
+				url: 'https://example.test/docs',
+				content: 'Passage for https://example.test/docs',
+			},
+		]);
+		expect(result.metadata.mode).toBe('highlights');
+	});
+
+	it('reads plain markdown without a query in markdown mode', async () => {
+		respond_scrape();
+		const response = await registered().handler({
+			provider: 'context',
+			mode: 'markdown',
+			url,
+		});
+
+		expect(response.isError).toBeUndefined();
+		expect(JSON.parse(fetch_mock.mock.calls[0][1].body)).toEqual({
+			url,
+			formats: { markdown: true },
+		});
+		expect(JSON.parse(response.content[0].text).content).toBe(
+			`# Page ${url}`,
+		);
+	});
+
+	it.each([undefined, '   '])(
+		'requires a relevance query for highlights before networking: %j',
+		async (query) => {
+			respond_scrape();
+			const response = await registered().handler({
+				provider: 'context',
+				mode: 'highlights',
+				url,
+				...(query === undefined ? {} : { query }),
+			});
+
+			expect(response.isError).toBe(true);
+			expect(response.content[0].text).toContain(
+				'A query is required for Context.dev highlights',
+			);
+			expect(fetch_mock).not.toHaveBeenCalled();
+		},
+	);
+
+	it('rejects modes Context.dev does not support', async () => {
+		respond_scrape();
+		const response = await registered().handler({
+			provider: 'context',
+			mode: 'scrape',
+			url,
+			query: 'pricing',
+		});
+
+		expect(response.isError).toBe(true);
+		expect(response.content[0].text).toContain(
+			'Valid modes: highlights, markdown',
+		);
+		expect(fetch_mock).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		[{ chunks_per_source: 1 }, 'Tavily extraction controls'],
+		[{ format: 'text' }, 'Tavily extraction controls'],
+		[
+			{ archive_fallback: true },
+			'archive_fallback is only supported',
+		],
+		[
+			{ firecrawl_options: { question: 'why?' } },
+			'firecrawl_options can only be used',
+		],
+		[{ screenshot: true }, 'screenshot can only be used'],
+	])(
+		'rejects provider-specific controls for context before networking: %j',
+		async (controls, message) => {
+			respond_scrape();
+			const response = await registered().handler({
+				provider: 'context',
+				url,
+				query: 'pricing',
+				...controls,
+			});
+
+			expect(response.isError).toBe(true);
+			expect(response.content[0].text).toContain(message);
+			expect(fetch_mock).not.toHaveBeenCalled();
+		},
+	);
+
+	it('rejects unsafe URLs before networking', async () => {
+		respond_scrape();
+		const response = await registered().handler({
+			provider: 'context',
+			url: 'http://169.254.169.254/latest',
+			query: 'pricing',
+		});
+
+		expect(response.isError).toBe(true);
+		expect(fetch_mock).not.toHaveBeenCalled();
+	});
 });

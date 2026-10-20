@@ -66,7 +66,7 @@ Choose only the providers you need.
 | `FIRECRAWL_API_KEY`                | Firecrawl processing, search, and agent tools                   |
 | `FIRECRAWL_BASE_URL`               | Optional self-hosted Firecrawl base URL                         |
 | `FIRECRAWL_AGENT_URL`              | Optional Firecrawl Agent endpoint override                      |
-| `CONTEXT_DEV_API_KEY`              | Context.dev web and business-intelligence tools                 |
+| `CONTEXT_DEV_API_KEY`              | Context.dev web, news, answers, and business-intelligence tools |
 | `SEARXNG_URL`                      | Optional self-hosted SearXNG search; off when unset             |
 | `RETRIEVER_TOOL_GROUPS`            | Optional capability groups; see below                           |
 | `RETRIEVER_RESULT_DIR`             | Private result-store directory                                  |
@@ -75,6 +75,38 @@ Choose only the providers you need.
 | `RETRIEVER_RESULT_STORE_MAX_BYTES` | Total quota, default 256 MiB with oldest-first eviction         |
 | `RETRIEVER_SPEND_CAPS`             | Optional per-account spending caps; see below                   |
 | `RETRIEVER_PROVIDER_COOLDOWN_MS`   | Default provider cooldown, 60000; `0` disables; see below       |
+
+## Provider notes
+
+Verified against provider documentation on 2026-10-19:
+
+- **Context.dev:** `context_news` searches news by natural-language
+  `query` or by one company identifier (`company_name`, `domain`,
+  `ticker`, or `isin`), with article type or publisher, date, sort,
+  `limit`, and `cursor` options. `context_web_extract` adds `mode=map`
+  for site URL discovery. Its `web_search` mode accepts `highlights`,
+  `highlights_max_characters`, `description_max_characters`,
+  `language`, `main_content_only`, and `include_subdomains`, and
+  `limit` sets the result count. `ai_search` gains the
+  `context_answers` provider (`context_mode` `fast` or `ultra`,
+  optional `json_format`); `ultra` costs about ten times `fast`.
+  Context.dev highlights are also available in the search and read
+  tools.
+- **Exa:** `web_search` `search_type` accepts `lite`, a cheapest
+  cache-only type that rejects `additional_queries`, `output_schema`,
+  `system_prompt`, and content options other than `text`,
+  `highlights`, and `snapshotAsOf`. `instant`, `fast`, and
+  `deep-reasoning` are legacy types. Provider warnings and notices are
+  returned as bounded `provider_warnings` and `provider_notices`
+  metadata.
+- **Firecrawl:** search `categories` are `developer`, `gov`,
+  `research`, and `pdf`; `github` is no longer accepted. Paper records
+  under `data.research` are parsed ahead of Firecrawl's 2026-11-16
+  change to the `research` category, and provider warnings are
+  returned as `provider_warnings`.
+- **Credits:** HTTP 402 from any provider is reported as credits
+  exhausted or payment required. It is not retried and the provider
+  body is not echoed.
 
 ## Result store
 

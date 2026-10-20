@@ -19,7 +19,11 @@ import { validate_api_key } from '../../../common/validation.js';
 import { config } from '../../../config/env.js';
 
 type FirecrawlSearchSource = 'web' | 'images' | 'news';
-type FirecrawlSearchCategory = 'github' | 'research' | 'pdf';
+type FirecrawlSearchCategory =
+	| 'developer'
+	| 'gov'
+	| 'research'
+	| 'pdf';
 
 type FirecrawlSearchFormat =
 	| string
@@ -78,10 +82,22 @@ const firecrawl_news_result_schema = v.looseObject({
 	metadata: v.optional(v.record(v.string(), v.unknown())),
 });
 
+// Paper records from the Research Index (`categories: ['research']`).
+const firecrawl_research_result_schema = v.looseObject({
+	paperId: v.optional(v.string()),
+	primaryId: v.optional(v.string()),
+	ids: v.optional(v.unknown()),
+	title: v.nullish(v.string()),
+	abstract: v.nullish(v.string()),
+	score: v.nullish(v.number()),
+	url: v.optional(v.string()),
+});
+
 const firecrawl_search_data_schema = v.object({
 	web: v.optional(v.array(firecrawl_web_result_schema)),
 	images: v.optional(v.array(firecrawl_image_result_schema)),
 	news: v.optional(v.array(firecrawl_news_result_schema)),
+	research: v.optional(v.array(firecrawl_research_result_schema)),
 });
 
 const firecrawl_search_response_schema = v.object({
@@ -90,6 +106,7 @@ const firecrawl_search_response_schema = v.object({
 		v.union([firecrawl_search_data_schema, v.array(v.unknown())]),
 	),
 	warning: v.optional(v.nullable(v.string())),
+	warnings: v.optional(v.array(v.unknown())),
 	id: v.optional(v.string()),
 	creditsUsed: v.optional(v.number()),
 	error: v.optional(v.string()),
@@ -104,6 +121,36 @@ type FirecrawlImageResult = v.InferOutput<
 type FirecrawlNewsResult = v.InferOutput<
 	typeof firecrawl_news_result_schema
 >;
+type FirecrawlResearchResult = v.InferOutput<
+	typeof firecrawl_research_result_schema
+>;
+
+const max_provider_warnings = 10;
+const max_provider_warning_length = 500;
+
+const warning_text = (warning: unknown): string => {
+	if (typeof warning === 'string') return warning;
+	if (
+		warning &&
+		typeof warning === 'object' &&
+		'message' in warning &&
+		typeof warning.message === 'string'
+	) {
+		return warning.message;
+	}
+	try {
+		return JSON.stringify(warning) ?? String(warning);
+	} catch {
+		return String(warning);
+	}
+};
+
+const provider_warnings = (warnings: unknown[] | undefined) =>
+	(warnings ?? [])
+		.map(warning_text)
+		.filter((text) => text.length > 0)
+		.slice(0, max_provider_warnings)
+		.map((text) => text.slice(0, max_provider_warning_length));
 
 const normalize_options = (
 	options?: Record<string, unknown>,
@@ -202,6 +249,33 @@ const without_scraped_body = <
 	const copy: Record<string, unknown> = { ...result };
 	for (const field of scraped_fields) delete copy[field];
 	return copy as Omit<T, (typeof scraped_fields)[number]>;
+};
+
+// Paper records often carry no URL; fall back to a stable identifier.
+const research_source = (
+	result: FirecrawlResearchResult,
+	index: number,
+) =>
+	result.url ||
+	(result.primaryId
+		? `research:${result.primaryId}`
+		: result.paperId
+			? `research:${result.paperId}`
+			: `research:result-${index + 1}`);
+
+const research_content = (result: FirecrawlResearchResult) =>
+	result.abstract || 'No content extracted';
+
+const format_research_result = (
+	result: FirecrawlResearchResult,
+	index: number,
+) => {
+	const title = result.title ? `## ${result.title}\n` : '';
+	const score =
+		typeof result.score === 'number'
+			? `Score: ${result.score}\n`
+			: '';
+	return `${title}Source: ${research_source(result, index)}\n${score}\n${research_content(result)}`;
 };
 
 const format_web_result = (result: FirecrawlWebResult) => {
@@ -305,8 +379,10 @@ export class FirecrawlSearchProvider implements ProcessingProvider {
 				const web = data.data?.web || [];
 				const images = data.data?.images || [];
 				const news = data.data?.news || [];
+				const research = data.data?.research || [];
+				const warnings = provider_warnings(data.warnings);
 				const total_results =
-					web.length + images.length + news.length;
+					web.length + images.length + news.length + research.length;
 
 				if (total_results === 0) {
 					throw new ProviderError(
@@ -329,12 +405,17 @@ export class FirecrawlSearchProvider implements ProcessingProvider {
 						url: result.imageUrl || result.url,
 						content: format_image_result(result),
 					})),
+					...research.map((result, index) => ({
+						url: research_source(result, index),
+						content: research_content(result),
+					})),
 				];
 
 				const combined_content = [
 					...web.map(format_web_result),
 					...news.map(format_news_result),
 					...images.map(format_image_result),
+					...research.map(format_research_result),
 				].join('\n\n---\n\n');
 
 				const word_count = combined_content
@@ -350,6 +431,7 @@ export class FirecrawlSearchProvider implements ProcessingProvider {
 							web: web.map(without_scraped_body),
 							images,
 							news: news.map(without_scraped_body),
+							...(research.length > 0 && { research }),
 						},
 						urls_processed: total_results,
 						successful_extractions: total_results,
@@ -357,10 +439,16 @@ export class FirecrawlSearchProvider implements ProcessingProvider {
 						search_id: data.id,
 						creditsUsed: data.creditsUsed,
 						warning: data.warning,
+						...(warnings.length > 0 && {
+							provider_warnings: warnings,
+						}),
 						source_counts: {
 							web: web.length,
 							images: images.length,
 							news: news.length,
+							...(research.length > 0 && {
+								research: research.length,
+							}),
 						},
 					},
 					source_provider: this.name,

@@ -5,10 +5,20 @@ These JSON files were captured from the built `dist/index.js` at
 separate temporary homes/results. They are observed local MCP output,
 not fabricated schemas or live entitlement evidence.
 
-- `all-providers.json`: 14 tools.
+- `all-providers.json`: 15 tools (14 as captured plus `context_news`).
 - `no-providers.json`: only `result_read`.
-- `no-github.json`: 13 tools, no `github_search`.
+- `no-github.json`: 14 tools (13 as captured plus `context_news`), no
+  `github_search`.
 - `tavily-only.json`: search, extraction, research, and `result_read`.
+
+On 2026-10-19 the committed fixtures were amended by hand, not
+recaptured, for provider-contract updates: the Exa `lite` search type,
+the Firecrawl `developer`/`gov` categories, the `context_answers`
+`ai_search` provider, the `context_web_extract` `map` mode and search
+options, the `context_news` tool, and the Context.dev `context`
+search/read provider. Recapture with `--update` from an approved
+isolated worktree and review the diff before treating them as observed
+output again.
 
 Run `node src/server/fixtures/evolution-discovery/capture.mjs` from an
 approved isolated worktree after its build. The default verifies the
