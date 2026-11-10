@@ -7,8 +7,25 @@ boundaries; this guide owns contributor commands and validation.
 ## Setup and dependency safety
 
 Use Node.js 22 or newer and Corepack with the `packageManager` version
-in `package.json`. CI covers Node 22 and 24. Do not install a global
-pnpm or replace the pinned lockfile with npm output.
+in `package.json`. CI covers Node 22, 24, and 26. Do not install a
+global pnpm or replace the pinned lockfile with npm output.
+
+Node 26 does not bundle Corepack. Run the exact pinned pnpm release
+under the Node version being tested instead, and use it wherever the
+commands below say `corepack pnpm`. One way is the registry tarball,
+checked against the published integrity before unpacking:
+
+```bash
+curl -fsSLO https://registry.npmjs.org/pnpm/-/pnpm-11.9.0.tgz
+npm view pnpm@11.9.0 dist.integrity
+echo "sha512-$(openssl dgst -sha512 -binary pnpm-11.9.0.tgz | base64 -w0)"
+mkdir pnpm-11.9.0
+tar -xzf pnpm-11.9.0.tgz -C pnpm-11.9.0 --strip-components=1
+node pnpm-11.9.0/bin/pnpm.mjs --version
+```
+
+The two `sha512-` values must match. The `Dockerfile` pins the same
+tarball by SHA-256.
 
 Prepare dependencies only in an isolated checkout with installation
 approved on the production host. Use an empty private store and copy
