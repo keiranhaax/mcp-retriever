@@ -6,9 +6,8 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Node 26 does not bundle Corepack. Fetch the pnpm release named by
-# packageManager from the npm registry, pinned by the tarball's
-# SHA-256, and fail the build if the two pins drift apart.
+# Node 26 does not bundle Corepack. Fetch pnpm 11.9.0 from the npm
+# registry, pinned by the tarball's SHA-256.
 ADD --checksum=sha256:2b567aa66026238078ac2e0a33bec3febd60e962987aac697456f3180819b287 \
     https://registry.npmjs.org/pnpm/-/pnpm-11.9.0.tgz /tmp/pnpm.tgz
 RUN mkdir /opt/pnpm \
@@ -18,7 +17,20 @@ RUN mkdir /opt/pnpm \
 
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-RUN test "pnpm@$(pnpm --version)" = "$(node -p 'require("./package.json").packageManager')"
+# pnpm 11 switches to, and downloads, the version packageManager
+# names, so `pnpm --version` cannot detect drift. This guard reads the
+# version from the unpacked tarball's package.json with node, without
+# running pnpm, and fails unless packageManager names exactly it.
+# pmOnFail=error keeps every later pnpm step on the pinned release:
+# pnpm exits on a version mismatch instead of fetching another one.
+RUN node -e ' \
+    const pinned = "pnpm@" + require("/opt/pnpm/package.json").version; \
+    const wanted = require("./package.json").packageManager; \
+    if (wanted !== pinned) { \
+        console.error(`packageManager is ${wanted}, the Dockerfile pins ${pinned}`); \
+        process.exit(1); \
+    }'
+ENV pnpm_config_pm_on_fail=error
 COPY patches ./patches
 RUN pnpm install --frozen-lockfile --prod=false
 COPY tsconfig.json vite.config.ts ./
