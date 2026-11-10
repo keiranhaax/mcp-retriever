@@ -12,6 +12,11 @@
   registry schema.
 - Correct the deployment runbook's fork metadata policy, which still
   described the fork as unpublished.
+- Test on Node.js 26 alongside 22 and 24. The Docker image now builds
+  on `node:26.13.0-bookworm-slim` and fetches pnpm 11.9.0 by checksum,
+  since Node 26 does not bundle Corepack. Its build stage installs CA
+  certificates, without which Vite+ aborted and the image did not
+  build. `engines.node` stays `>=22.0.0`.
 
 ## 0.0.24
 
